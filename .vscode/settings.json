@@ -32,5 +32,7 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
-  "deno.enable": false
+  "deno.enable": false,
+  "editor.fontFamily": "Fira Code",
+  "editor.fontLigatures": true
 }

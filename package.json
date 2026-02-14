@@ -1,6 +1,6 @@
 {
   "name": "omailhot",
-  "private": true,
+  "private": false,
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
@@ -52,8 +52,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
-    "@content-collections/core": "^0.13.1",
-    "@content-collections/vite": "^0.2.8",
     "@inlang/paraglide-js": "^2.8.0",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",

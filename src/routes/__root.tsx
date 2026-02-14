@@ -2,21 +2,17 @@ import {
   HeadContent,
   Scripts,
   createRootRoute,
-  redirect,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import Header from '../components/Header'
-
-import { getLocale, shouldRedirect } from '@/paraglide/runtime'
+import { THEME_BOOTSTRAP_SCRIPT } from '@/config/theme'
+import { getLocale } from '@/paraglide/runtime'
 
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
   beforeLoad: async () => {
-    // Other redirect strategies are possible; see
-    // https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', getLocale())
     }
@@ -32,7 +28,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Propulso Employee Merch',
       },
     ],
     links: [
@@ -50,10 +46,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang={getLocale()}>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
-        <Header />
         {children}
         <TanStackDevtools
           config={{

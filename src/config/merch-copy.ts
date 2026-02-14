@@ -1,0 +1,210 @@
+import type { Category, StoreLocale } from "@/types/merch";
+
+type LocalizedCategoryLabels = Record<"all" | Category, string>;
+
+export type MerchCopy = {
+	appTitle: string;
+	appSubtitle: string;
+	landingBadge: string;
+	landingTitle: string;
+	landingDescription: string;
+	landingBullet1: string;
+	landingBullet2: string;
+	landingBullet3: string;
+	landingCta: string;
+	loginTitle: string;
+	loginSubtitle: string;
+	emailLabel: string;
+	emailPlaceholder: string;
+	signIn: string;
+	closeLogin: string;
+	invalidEmail: string;
+	invalidDomain: string;
+	tabCatalog: string;
+	tabProfile: string;
+	catalogTitle: string;
+	catalogSubtitle: string;
+	search: string;
+	resetCart: string;
+	removeItem: string;
+	viewDetails: string;
+	quickAdd: string;
+	addedToCart: string;
+	perItem: string;
+	quantity: string;
+	variant: string;
+	variants: string;
+	noVariants: string;
+	selectVariant: string;
+	productDetails: string;
+	addSelection: string;
+	categoryLabels: LocalizedCategoryLabels;
+	profileTitle: string;
+	profileSubtitle: string;
+	loggedInAs: string;
+	logout: string;
+	walletTitle: string;
+	walletSubtitle: string;
+	creditAvailable: string;
+	creditUsed: string;
+	creditRemaining: string;
+	walletToPay: string;
+	settingsTitle: string;
+	settingOrderUpdates: string;
+	settingDrops: string;
+	cartBuilder: string;
+	closeCart: string;
+	items: string;
+	emptyCart: string;
+	addFromCatalog: string;
+	subtotal: string;
+	checkout: string;
+	checkoutHint: string;
+	policy: string;
+};
+
+export const merchCopy: Record<StoreLocale, MerchCopy> = {
+	en: {
+		appTitle: "Propulso Merch",
+		appSubtitle: "Internal employee store",
+		landingBadge: "Modern Team Store",
+		landingTitle: "Premium merch experience for every employee",
+		landingDescription:
+			"Choose products in real time, keep control of your budget, and submit one clean cart request.",
+		landingBullet1: "Curated catalog with instant quantity updates",
+		landingBullet2: "Company credit and wallet split always visible",
+		landingBullet3: "Profile controls and notifications included",
+		landingCta: "Access employee store",
+		loginTitle: "Employee Login",
+		loginSubtitle: "Use your Propulso e-mail to access the internal store.",
+		emailLabel: "Work e-mail",
+		emailPlaceholder: "name@propulso.io",
+		signIn: "Sign in",
+		closeLogin: "Close login",
+		invalidEmail: "Please enter a valid e-mail address.",
+		invalidDomain: "Use your @propulso.io e-mail to continue.",
+		tabCatalog: "Catalog",
+		tabProfile: "Profile",
+		catalogTitle: "Catalog",
+		catalogSubtitle: "Pick your merch items.",
+		search: "Search products",
+		resetCart: "Reset cart",
+		removeItem: "Remove",
+		viewDetails: "View details",
+		quickAdd: "Quick add",
+		addedToCart: "Added to cart",
+		perItem: "per item",
+		quantity: "Qty",
+		variant: "Variant",
+		variants: "Variants",
+		noVariants: "Default option",
+		selectVariant: "Select",
+		productDetails: "Product details",
+		addSelection: "Add selection",
+		categoryLabels: {
+			all: "All",
+			wearables: "Wearables",
+			desk: "Desk",
+			travel: "Travel",
+			lifestyle: "Lifestyle",
+		},
+		profileTitle: "User Profile",
+		profileSubtitle: "Manage your account and wallet.",
+		loggedInAs: "Logged in as",
+		logout: "Logout",
+		walletTitle: "Wallet",
+		walletSubtitle:
+			"Propulso credit is applied first. Remaining amount is your personal payment.",
+		creditAvailable: "Credit available",
+		creditUsed: "Credit used",
+		creditRemaining: "Credit remaining",
+		walletToPay: "From your wallet",
+		settingsTitle: "Settings",
+		settingOrderUpdates: "Order status e-mails",
+		settingDrops: "Notify me about new drops",
+		cartBuilder: "Cart",
+		closeCart: "Close cart",
+		items: "items",
+		emptyCart: "Your cart is empty",
+		addFromCatalog: "Add items from the catalog to build your cart.",
+		subtotal: "Subtotal",
+		checkout: "Submit order",
+		checkoutHint:
+			"Submitting sends your selected items to the internal merch order flow.",
+		policy:
+			"Propulso applies $150 credit first, then any remaining amount is paid from your personal wallet.",
+	},
+	fr: {
+		appTitle: "Merch Propulso",
+		appSubtitle: "Boutique interne",
+		landingBadge: "Boutique équipe",
+		landingTitle: "Expérience merch premium pour chaque employé",
+		landingDescription:
+			"Choisissez vos articles en temps réel, suivez votre budget et envoyez un panier clair.",
+		landingBullet1: "Catalogue sélectif avec quantités en direct",
+		landingBullet2:
+			"Partage entre crédit entreprise et portefeuille toujours visible",
+		landingBullet3: "Profil, préférences et notifications inclus",
+		landingCta: "Accéder à la boutique employé",
+		loginTitle: "Connexion employé",
+		loginSubtitle:
+			"Utilisez votre e-mail Propulso pour accéder à la boutique interne.",
+		emailLabel: "E-mail propulso.io",
+		emailPlaceholder: "name@propulso.io",
+		signIn: "Se connecter",
+		closeLogin: "Fermer la connexion",
+		invalidEmail: "Veuillez entrer une adresse e-mail valide.",
+		invalidDomain: "Utilisez votre e-mail @propulso.io.",
+		tabCatalog: "Catalogue",
+		tabProfile: "Profil",
+		catalogTitle: "Catalogue",
+		catalogSubtitle: "Choisissez vos articles.",
+		search: "Rechercher des produits",
+		resetCart: "Vider le panier",
+		removeItem: "Retirer",
+		viewDetails: "Voir les détails",
+		quickAdd: "Ajout rapide",
+		addedToCart: "Ajouté au panier",
+		perItem: "par article",
+		quantity: "Qté",
+		variant: "Variante",
+		variants: "Variantes",
+		noVariants: "Option par défaut",
+		selectVariant: "Choisir",
+		productDetails: "Détails du produit",
+		addSelection: "Ajouter la sélection",
+		categoryLabels: {
+			all: "Tous",
+			wearables: "Vêtements",
+			desk: "Bureau",
+			travel: "Voyage",
+			lifestyle: "Style de vie",
+		},
+		profileTitle: "Profil utilisateur",
+		profileSubtitle: "Gérez votre compte et votre portefeuille.",
+		loggedInAs: "Connecté en tant que",
+		logout: "Se déconnecter",
+		walletTitle: "Portefeuille",
+		walletSubtitle:
+			"Le crédit Propulso est appliqué en premier. Le reste est à votre charge.",
+		creditAvailable: "Crédit disponible",
+		creditUsed: "Crédit utilisé",
+		creditRemaining: "Crédit restant",
+		walletToPay: "Depuis votre portefeuille",
+		settingsTitle: "Paramètres",
+		settingOrderUpdates: "E-mails de statut de commande",
+		settingDrops: "M'avertir des nouvelles collections",
+		cartBuilder: "Panier",
+		closeCart: "Fermer le panier",
+		items: "articles",
+		emptyCart: "Votre panier est vide",
+		addFromCatalog:
+			"Ajoutez des articles depuis le catalogue pour créer votre panier.",
+		subtotal: "Sous-total",
+		checkout: "Envoyer la commande",
+		checkoutHint:
+			"L'envoi transmet les articles sélectionnés pour traitement de la commande interne.",
+		policy:
+			"Propulso applique d'abord 150 $ de crédit, puis le reste est payé depuis votre portefeuille personnel.",
+	},
+};

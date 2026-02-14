@@ -1,0 +1,9 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "language_label": "Langue",
+  "current_locale": "Langue actuelle : {locale}",
+  "header_name": "Propulso Merch",
+  "header_subtitle": "Boutique interne pour les employés",
+  "theme_enable_dark": "Activer le mode sombre",
+  "theme_enable_light": "Activer le mode clair"
+}
