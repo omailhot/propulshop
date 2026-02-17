@@ -12,3 +12,9 @@ count.txt
 .output
 .vinxi
 todos.json
+
+# Editor / IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo

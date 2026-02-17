@@ -15,7 +15,6 @@ const buildCartItemId = (productId: string, selectedOptions: Record<string, stri
 }
 
 export function useMerchStore(products: Product[]) {
-  const search = ref('')
   const activeCategory = ref<'all' | Category>('all')
   const cartItems = ref<CartItem[]>([])
   const cartOpen = ref(false)
@@ -152,7 +151,6 @@ export function useMerchStore(products: Product[]) {
 
   return {
     state: {
-      search,
       activeCategory,
       cartOpen,
       orderUpdates,
@@ -170,9 +168,6 @@ export function useMerchStore(products: Product[]) {
       activeProduct,
     },
     actions: {
-      setSearch: (value: string) => {
-        search.value = value
-      },
       setActiveCategory: (value: 'all' | Category) => {
         activeCategory.value = value
       },

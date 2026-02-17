@@ -48,6 +48,7 @@
                 <th class="py-2 pr-3">Items</th>
                 <th class="py-2 pr-3">Subtotal</th>
                 <th class="py-2">Created</th>
+                <th class="py-2 pl-3 text-right">Open</th>
               </tr>
             </thead>
             <tbody>
@@ -57,6 +58,9 @@
                 <td class="py-2 pr-3">{{ order.item_count }}</td>
                 <td class="py-2 pr-3">{{ order.subtotal }}</td>
                 <td class="py-2">{{ order.created_at }}</td>
+                <td class="py-2 pl-3 text-right">
+                  <Button size="sm" variant="ghost" @click="$emit('select-order', order.id)">View</Button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -95,5 +99,6 @@ defineProps<{
 
 defineEmits<{
   refresh: []
+  'select-order': [orderId: string]
 }>()
 </script>

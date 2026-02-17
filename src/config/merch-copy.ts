@@ -89,6 +89,8 @@ export type MerchCopy = {
   lockExplanationTitle: string
   lockExplanationBody: string
   lockDeadlineLabel: string
+  existingOrderBannerTitle: string
+  viewMyOrder: string
   policy: string
 }
 
@@ -162,7 +164,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
     addFromCatalog: 'Add items from the catalog to build your cart.',
     subtotal: 'Subtotal',
     checkout: 'Submit order',
-    continueSelection: 'Continue with selected choices',
+    continueSelection: 'Go to confirmation page',
     checkoutHint:
       'Submitting sends your selected items to the internal merch order flow.',
     reviewTitle: 'Order review',
@@ -191,6 +193,8 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
     lockExplanationBody:
       'Lock your order before March 1. If not locked, your current selection will still be placed automatically on March 1.',
     lockDeadlineLabel: 'Deadline',
+    existingOrderBannerTitle: 'You already have an order in progress.',
+    viewMyOrder: 'View my order',
     policy:
       'Propulso applies $150 credit first, then any remaining amount is paid from your personal wallet.',
   },
@@ -266,7 +270,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
       'Ajoutez des articles depuis le catalogue pour créer votre panier.',
     subtotal: 'Sous-total',
     checkout: 'Envoyer la commande',
-    continueSelection: 'Continuer avec les choix sélectionnés',
+    continueSelection: 'Aller a la page de confirmation',
     checkoutHint:
       "L'envoi transmet les articles sélectionnés pour traitement de la commande interne.",
     reviewTitle: 'Révision de commande',
@@ -295,6 +299,8 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
     lockExplanationBody:
       "Verrouillez votre commande avant le 1er mars. Si elle n'est pas verrouillée, la sélection actuelle sera quand même placée automatiquement le 1er mars.",
     lockDeadlineLabel: 'Date limite',
+    existingOrderBannerTitle: 'Vous avez deja une commande en cours.',
+    viewMyOrder: 'Voir ma commande',
     policy:
       "Propulso applique d'abord 150 $ de crédit, puis le reste est payé depuis votre portefeuille personnel.",
   },

@@ -65,8 +65,8 @@
           </div>
         </div>
         <Button class="mt-4 w-full">
-          <CreditCard class="size-4" />
-          {{ t.checkout }}
+          <ArrowRight class="size-4" />
+          {{ t.continueSelection }}
         </Button>
       </div>
     </div>
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { CreditCard, Minus, Plus, ShoppingBasket, X } from 'lucide-vue-next'
+import { ArrowRight, Minus, Plus, ShoppingBasket, X } from 'lucide-vue-next'
 
 import Button from '@/components/ui/Button.vue'
 import Drawer from '@/components/ui/Drawer.vue'

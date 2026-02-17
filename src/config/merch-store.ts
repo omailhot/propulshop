@@ -160,4 +160,88 @@ export const products: Product[] = [
       fr: 'Casquette respirante avec coupe sportive.',
     },
   },
+  {
+    id: 'placeholder-1',
+    category: 'desk',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
+  {
+    id: 'placeholder-2',
+    category: 'desk',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
+  {
+    id: 'placeholder-3',
+    category: 'travel',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
+  {
+    id: 'placeholder-4',
+    category: 'travel',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
+  {
+    id: 'placeholder-5',
+    category: 'lifestyle',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
+  {
+    id: 'placeholder-6',
+    category: 'lifestyle',
+    price: 0,
+    gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    name: {
+      en: ' ',
+      fr: ' ',
+    },
+    description: {
+      en: ' ',
+      fr: ' ',
+    },
+  },
 ]

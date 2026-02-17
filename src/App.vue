@@ -27,17 +27,28 @@
           :users="adminUsers"
           :orders="adminOrders"
           @refresh="loadAdminDashboard"
+          @select-order="onOpenAdminOrder"
         />
       </div>
       <div class="mt-5" v-else-if="currentView === 'catalog'">
+        <div
+          v-if="!isAdmin && activeOrderId"
+          class="mb-4 flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p class="font-semibold">{{ t.existingOrderBannerTitle }}</p>
+            <p class="text-sm text-muted-foreground">{{ orderStatusMessage }}</p>
+          </div>
+          <Button class="shrink-0" @click="onOpenDashboard">
+            {{ t.viewMyOrder }}
+          </Button>
+        </div>
         <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <CatalogSection
           :t="t"
           :locale="locale"
-          :search="state.search.value"
-          :filtered-products="filteredProducts"
+          :products="products"
           :format-currency="formatCurrency"
-          @search-change="actions.setSearch"
           @open-product="actions.setActiveProductId"
           @quick-add="onQuickAdd"
         />
@@ -59,7 +70,7 @@
         </div>
       </div>
       <OrderConfirmationPage
-        v-else
+        v-else-if="currentView === 'confirmation'"
         :t="t"
         :locale="locale"
         :cart-lines="derived.cartLines.value"
@@ -78,6 +89,28 @@
         @lock-order="onLockOrder"
         @unlock-order="onUnlockOrder"
         @place-order="submitOrder"
+      />
+      <OrderConfirmationPage
+        v-else
+        :t="t"
+        :locale="locale"
+        :cart-lines="adminPreview.cartLines"
+        :subtotal="adminPreview.subtotal"
+        :credit-used="adminPreview.creditUsed"
+        :credit-remaining="adminPreview.creditRemaining"
+        :wallet-to-pay="adminPreview.walletToPay"
+        :format-currency="formatCurrency"
+        :is-submitting="false"
+        :lock-action-busy="false"
+        :is-order-locked="adminPreview.isOrderLocked"
+        :is-lock-deadline-passed="adminPreview.isLockDeadlinePassed"
+        :lock-deadline-label="adminPreview.lockDeadlineLabel"
+        :order-status-message="adminPreview.orderStatusMessage"
+        :read-only="true"
+        @back="onBackFromAdminOrder"
+        @lock-order="() => undefined"
+        @unlock-order="() => undefined"
+        @place-order="() => undefined"
       />
     </div>
   </main>
@@ -106,6 +139,7 @@ import CatalogSection from '@/components/merch/CatalogSection.vue'
 import OrderConfirmationPage from '@/components/merch/OrderConfirmationPage.vue'
 import ProductDetailsModal from '@/components/merch/ProductDetailsModal.vue'
 import ToastStack from '@/components/merch/ToastStack.vue'
+import Button from '@/components/ui/Button.vue'
 import { merchCopy } from '@/config/merch-copy'
 import { products } from '@/config/merch-store'
 import { useMerchStore } from '@/hooks/use-merch-store'
@@ -125,7 +159,7 @@ const formatCurrency = computed(
 )
 
 const { state, derived, actions } = useMerchStore(products)
-const currentView = ref<'catalog' | 'confirmation' | 'admin'>('catalog')
+const currentView = ref<'catalog' | 'confirmation' | 'admin' | 'admin-order'>('catalog')
 const isSubmittingOrder = ref(false)
 const lockActionBusy = ref(false)
 const authBusy = ref(false)
@@ -150,6 +184,44 @@ const activeOrderId = ref<string | null>(null)
 const activeOrderLocked = ref(false)
 const activeOrderPlacedAt = ref<string | null>(null)
 const activeOrderLockDeadlineAt = ref('2026-03-02T00:00:00Z')
+const adminSelectedOrderId = ref<string | null>(null)
+const adminPreview = ref<{
+  cartLines: Array<{
+    id: string
+    quantity: number
+    lineTotal: number
+    selectedOptions: Record<string, string>
+    product: {
+      name: Record<StoreLocale, string>
+      imageGallery?: string[]
+      gradientClass?: string
+      variantGroups?: Array<{
+        id: string
+        label: Record<StoreLocale, string>
+        type: 'size' | 'color' | 'select'
+        options: Array<{ id: string; label: Record<StoreLocale, string>; swatchHex?: string }>
+      }>
+    }
+  }>
+  subtotal: number
+  creditUsed: number
+  creditRemaining: number
+  walletToPay: number
+  isOrderLocked: boolean
+  isLockDeadlinePassed: boolean
+  lockDeadlineLabel: string
+  orderStatusMessage: string
+}>({
+  cartLines: [],
+  subtotal: 0,
+  creditUsed: 0,
+  creditRemaining: 0,
+  walletToPay: 0,
+  isOrderLocked: false,
+  isLockDeadlinePassed: false,
+  lockDeadlineLabel: '',
+  orderStatusMessage: '',
+})
 
 const lockDeadlineDate = computed(() => new Date(activeOrderLockDeadlineAt.value))
 const lockDeadlineLabel = computed(() =>
@@ -178,14 +250,27 @@ const orderStatusMessage = computed(() => {
   return `${t.value.orderUnlockedStatus} ${t.value.lockDeadlineLabel}: ${lockDeadlineLabel.value}.`
 })
 
-const filteredProducts = computed(() => {
-  const query = state.search.value.trim().toLowerCase()
-
-  return products.filter((product) => {
-    const searchableText = `${product.name[locale.value]} ${product.description[locale.value]}`.toLowerCase()
-    return query.length === 0 || searchableText.includes(query)
-  })
-})
+const buildOrderStatusMessage = (input: {
+  activeOrderId: string | null
+  placedAt: string | null
+  isLocked: boolean
+  isLockDeadlinePassed: boolean
+  lockDeadlineLabel: string
+}) => {
+  if (!input.activeOrderId) {
+    return `${t.value.orderNoDraftStatus} ${t.value.lockDeadlineLabel}: ${input.lockDeadlineLabel}.`
+  }
+  if (input.placedAt) {
+    return `${t.value.orderPlacedStatus} ${new Date(input.placedAt).toLocaleString(locale.value === 'fr' ? 'fr-CA' : 'en-CA')}.`
+  }
+  if (input.isLocked) {
+    return `${t.value.orderLockedStatus} ${t.value.lockDeadlineLabel}: ${input.lockDeadlineLabel}.`
+  }
+  if (input.isLockDeadlinePassed) {
+    return t.value.deadlinePassed
+  }
+  return `${t.value.orderUnlockedStatus} ${t.value.lockDeadlineLabel}: ${input.lockDeadlineLabel}.`
+}
 
 const onQuickAdd = (productId: string) => {
   if (!ensureOrderEditable()) {
@@ -247,6 +332,90 @@ const onBackToCatalog = () => {
   currentView.value = 'catalog'
 }
 
+const onOpenDashboard = () => {
+  currentView.value = 'confirmation'
+}
+
+const onBackFromAdminOrder = () => {
+  currentView.value = 'admin'
+}
+
+const onOpenAdminOrder = async (orderId: string) => {
+  if (!isAdmin.value) {
+    return
+  }
+
+  const orderResult = await neonClient
+    .from('orders')
+    .select('id,subtotal,credit_used,credit_remaining,wallet_to_pay,is_locked,placed_at,lock_deadline_at')
+    .eq('id', orderId)
+    .single()
+  if (orderResult.error || !orderResult.data) {
+    actions.enqueueToast(t.value.orderSendFailed)
+    return
+  }
+
+  const itemsResult = await neonClient
+    .from('order_items')
+    .select('id,product_id,product_name,quantity,line_total,selected_options')
+    .eq('order_id', orderId)
+  if (itemsResult.error) {
+    actions.enqueueToast(t.value.orderSendFailed)
+    return
+  }
+
+  const lockDeadlineDate = new Date((orderResult.data as { lock_deadline_at: string }).lock_deadline_at)
+  const previewLockDeadlineLabel = lockDeadlineDate.toLocaleString(locale.value === 'fr' ? 'fr-CA' : 'en-CA', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  })
+  const previewIsLocked = Boolean((orderResult.data as { is_locked: boolean }).is_locked)
+  const previewPlacedAt = ((orderResult.data as { placed_at: string | null }).placed_at ?? null) as string | null
+  const previewIsDeadlinePassed = Date.now() >= lockDeadlineDate.getTime()
+
+  adminSelectedOrderId.value = orderId
+  adminPreview.value = {
+    cartLines: ((itemsResult.data ?? []) as Array<{
+      id: string
+      product_id: string
+      product_name: string
+      quantity: number
+      line_total: number
+      selected_options: Record<string, string> | null
+    }>).map((item) => {
+      const product = products.find((candidate) => candidate.id === item.product_id)
+      return {
+        id: item.id,
+        quantity: item.quantity,
+        lineTotal: item.line_total,
+        selectedOptions: (item.selected_options ?? {}) as Record<string, string>,
+        product: {
+          name: product?.name ?? { en: item.product_name, fr: item.product_name },
+          imageGallery: product?.imageGallery,
+          gradientClass: product?.gradientClass,
+          variantGroups: product?.variantGroups,
+        },
+      }
+    }),
+    subtotal: Number((orderResult.data as { subtotal: string | number }).subtotal),
+    creditUsed: Number((orderResult.data as { credit_used: string | number }).credit_used),
+    creditRemaining: Number((orderResult.data as { credit_remaining: string | number }).credit_remaining),
+    walletToPay: Number((orderResult.data as { wallet_to_pay: string | number }).wallet_to_pay),
+    isOrderLocked: previewIsLocked,
+    isLockDeadlinePassed: previewIsDeadlinePassed,
+    lockDeadlineLabel: previewLockDeadlineLabel,
+    orderStatusMessage: buildOrderStatusMessage({
+      activeOrderId: orderId,
+      placedAt: previewPlacedAt,
+      isLocked: previewIsLocked,
+      isLockDeadlinePassed: previewIsDeadlinePassed,
+      lockDeadlineLabel: previewLockDeadlineLabel,
+    }),
+  }
+
+  currentView.value = 'admin-order'
+}
+
 type OrderPayload = {
   requestId: string
   submittedAt: string
@@ -304,6 +473,48 @@ const getOrderPayload = (): OrderPayload => ({
 type SessionUser = {
   id: string
   email: string | null
+  isAdminClaim: boolean
+}
+
+type PostgrestErrorLike = {
+  code?: string
+  message?: string
+}
+
+const missingTableWarnings = new Set<string>()
+
+const isMissingTableError = (error: unknown, tableName: string) => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const casted = error as PostgrestErrorLike
+  return (
+    casted.code === 'PGRST205' &&
+    typeof casted.message === 'string' &&
+    casted.message.includes(`public.${tableName}`)
+  )
+}
+
+const isPermissionDeniedError = (error: unknown, tableName: string) => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const casted = error as PostgrestErrorLike
+  return (
+    casted.code === '42501' &&
+    typeof casted.message === 'string' &&
+    casted.message.toLowerCase().includes(`table ${tableName}`.toLowerCase())
+  )
+}
+
+const warnMissingTableOnce = (tableName: string) => {
+  if (missingTableWarnings.has(tableName)) {
+    return
+  }
+  missingTableWarnings.add(tableName)
+  console.warn(`Missing table public.${tableName}. Run database/neon-schema.sql to enable full features.`)
 }
 
 const getDisplayNameFromEmail = (email: string | null, fallbackId: string) => {
@@ -326,7 +537,11 @@ const getSessionUser = (sessionPayload: unknown): SessionUser | null => {
 
   const direct = sessionPayload as Record<string, unknown>
   const source = direct.data && typeof direct.data === 'object' ? (direct.data as Record<string, unknown>) : direct
-  const user = source.user
+  const session =
+    source.session && typeof source.session === 'object'
+      ? (source.session as Record<string, unknown>)
+      : null
+  const user = source.user ?? session?.user
 
   if (!user || typeof user !== 'object') {
     return null
@@ -335,12 +550,22 @@ const getSessionUser = (sessionPayload: unknown): SessionUser | null => {
   const casted = user as Record<string, unknown>
   const id = typeof casted.id === 'string' ? casted.id : null
   const email = typeof casted.email === 'string' ? casted.email : null
+  const role = typeof casted.role === 'string' ? casted.role.toLowerCase() : null
+  const roles = Array.isArray(casted.roles)
+    ? casted.roles.filter((value): value is string => typeof value === 'string').map((value) => value.toLowerCase())
+    : []
+  const metadata = casted.app_metadata
+  const metadataRole =
+    metadata && typeof metadata === 'object' && typeof (metadata as Record<string, unknown>).role === 'string'
+      ? ((metadata as Record<string, unknown>).role as string).toLowerCase()
+      : null
+  const isAdminClaim = role === 'admin' || roles.includes('admin') || metadataRole === 'admin'
 
   if (!id) {
     return null
   }
 
-  return { id, email }
+  return { id, email, isAdminClaim }
 }
 
 const ensureUserProfile = async (user: SessionUser) => {
@@ -354,6 +579,10 @@ const ensureUserProfile = async (user: SessionUser) => {
     { onConflict: 'user_id' },
   )
   if (upsert.error) {
+    if (isMissingTableError(upsert.error, 'app_users')) {
+      warnMissingTableOnce('app_users')
+      return
+    }
     throw upsert.error
   }
 }
@@ -376,10 +605,16 @@ const refreshSession = async () => {
 
   const adminCheck = await neonClient.from('admin_users').select('user_id').eq('user_id', user.id).limit(1)
   if (adminCheck.error) {
-    throw adminCheck.error
+    if (isMissingTableError(adminCheck.error, 'admin_users')) {
+      warnMissingTableOnce('admin_users')
+    } else {
+      console.error(adminCheck.error)
+    }
+    isAdmin.value = user.isAdminClaim
+    return
   }
 
-  isAdmin.value = (adminCheck.data?.length ?? 0) > 0
+  isAdmin.value = user.isAdminClaim || (adminCheck.data?.length ?? 0) > 0
 }
 
 const loadCurrentUserOrder = async () => {
@@ -485,14 +720,9 @@ const ensureOrderEditable = () => {
 const onConnectGoogle = async () => {
   authBusy.value = true
   try {
-    const callbackUrl = new URL(window.location.href)
-    if (callbackUrl.hostname === '127.0.0.1') {
-      callbackUrl.hostname = 'localhost'
-    }
-
     const result = await neonClient.auth.signIn.social({
       provider: 'google',
-      callbackURL: callbackUrl.toString(),
+      callbackURL: window.location.href,
     })
     if ((result as { error?: { message?: string } })?.error) {
       throw new Error((result as { error?: { message?: string } }).error?.message ?? 'Google sign-in failed')
@@ -532,8 +762,15 @@ const loadAdminDashboard = async () => {
       .from('app_users')
       .select('user_id,email,display_name,created_at,last_seen_at')
       .order('last_seen_at', { ascending: false })
-    if (usersResult.error) {
+    if (usersResult.error && !isMissingTableError(usersResult.error, 'app_users')) {
+      if (isPermissionDeniedError(usersResult.error, 'app_users')) {
+        adminError.value = 'Database permission missing for app_users. Run database/neon-schema.sql grants in Neon.'
+        return
+      }
       throw usersResult.error
+    }
+    if (usersResult.error && isMissingTableError(usersResult.error, 'app_users')) {
+      warnMissingTableOnce('app_users')
     }
 
     const ordersResult = await neonClient
@@ -541,16 +778,20 @@ const loadAdminDashboard = async () => {
       .select('id,request_id,user_email,item_count,subtotal,created_at')
       .order('created_at', { ascending: false })
     if (ordersResult.error) {
+      if (isPermissionDeniedError(ordersResult.error, 'orders')) {
+        adminError.value = 'Database permission missing for orders. Run database/neon-schema.sql grants in Neon.'
+        return
+      }
       throw ordersResult.error
     }
 
-    adminUsers.value = (usersResult.data ?? []) as Array<{
+    adminUsers.value = ((usersResult.data ?? []) as Array<{
       user_id: string
       email: string
       display_name: string
       created_at: string
       last_seen_at: string | null
-    }>
+    }>)
     adminOrders.value = (ordersResult.data ?? []) as Array<{
       id: string
       request_id: string
@@ -758,6 +999,13 @@ const onUnlockOrder = async () => {
 }
 
 onMounted(async () => {
+  if (window.location.hostname === '127.0.0.1') {
+    const normalizedUrl = new URL(window.location.href)
+    normalizedUrl.hostname = 'localhost'
+    window.location.replace(normalizedUrl.toString())
+    return
+  }
+
   try {
     await refreshSession()
     await loadCurrentUserOrder()

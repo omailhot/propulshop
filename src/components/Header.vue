@@ -2,9 +2,11 @@
   <header class="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
       <a :href="localizedHome" class="group flex items-center gap-3">
-        <div class="flex size-10 items-center justify-center rounded-xl border border-orange-300/60 bg-[linear-gradient(90deg,#ffa000_20%,#ff4b00,#ff0035)] text-primary-foreground shadow-sm transition group-hover:scale-105">
-          <ShoppingBag class="size-4" />
-        </div>
+        <img
+          src="/favicon.ico"
+          alt="Propulso logo"
+          class="size-10 rounded-xl border border-border/70 bg-background object-contain p-1 shadow-sm transition group-hover:scale-105"
+        />
         <div>
           <p class="font-semibold tracking-tight">{{ title ?? m.header_name() }}</p>
           <p class="text-xs text-muted-foreground">{{ subtitle ?? m.header_subtitle() }}</p>
@@ -17,7 +19,7 @@
           <Button v-if="isAdmin && view !== 'admin'" size="sm" variant="outline" @click="$emit('open-admin')">
             {{ adminLabel ?? 'Admin' }}
           </Button>
-          <Button v-if="view === 'admin'" size="sm" variant="outline" @click="$emit('open-catalog')">
+          <Button v-if="isAdmin && view === 'admin'" size="sm" variant="outline" @click="$emit('open-catalog')">
             {{ catalogLabel ?? 'Catalog' }}
           </Button>
           <Button size="sm" variant="ghost" @click="$emit('sign-out')">{{ signOutLabel ?? 'Sign out' }}</Button>
@@ -39,8 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingBag } from 'lucide-vue-next'
-
 import Button from '@/components/ui/Button.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -53,7 +53,7 @@ defineProps<{
   sessionEmail?: string | null
   isAuthenticated?: boolean
   isAdmin?: boolean
-  view?: 'catalog' | 'confirmation' | 'admin'
+  view?: 'catalog' | 'confirmation' | 'admin' | 'admin-order'
   authBusy?: boolean
   connectGoogleLabel?: string
   connectingLabel?: string
