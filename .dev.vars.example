@@ -1,0 +1,3 @@
+NEON_DATABASE_URL=postgresql://user:password@ep-xxx-xxx-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+# Optional when auth endpoint is not on the same origin as the Pages app:
+# BETTER_AUTH_URL=https://your-auth-domain.example.com

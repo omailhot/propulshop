@@ -2,10 +2,6 @@ export type StoreLocale = 'en' | 'fr'
 
 export type Category = 'wearables' | 'desk' | 'travel' | 'lifestyle'
 
-export type AppTab = 'catalog' | 'profile'
-
-export type LoginErrorKey = 'invalid_email' | 'invalid_domain' | null
-
 export type ProductVariantOption = {
   id: string
   label: Record<StoreLocale, string>

@@ -1,140 +1,104 @@
-import { useEffect, useMemo, useState } from 'react'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { COMPANY_CREDIT, SESSION_KEY } from '@/config/merch-store'
-import type {
-  AppTab,
-  CartItem,
-  Category,
-  LoginErrorKey,
-  Product,
-} from '@/types/merch'
+import { COMPANY_CREDIT } from '@/config/merch-store'
+import type { CartItem, Category, Product } from '@/types/merch'
 
 type ToastMessage = {
   id: string
   message: string
 }
 
-const buildCartItemId = (
-  productId: string,
-  selectedOptions: Record<string, string>,
-) => {
-  const entries = Object.entries(selectedOptions).sort(([a], [b]) =>
-    a.localeCompare(b),
-  )
+const buildCartItemId = (productId: string, selectedOptions: Record<string, string>) => {
+  const entries = Object.entries(selectedOptions).sort(([a], [b]) => a.localeCompare(b))
   const optionKey = entries.map(([key, value]) => `${key}:${value}`).join('|')
   return `${productId}::${optionKey}`
 }
 
 export function useMerchStore(products: Product[]) {
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null)
-  const [loginEmail, setLoginEmail] = useState('')
-  const [loginError, setLoginError] = useState<LoginErrorKey>(null)
-  const [activeTab, setActiveTab] = useState<AppTab>('catalog')
-  const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState<'all' | Category>('all')
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [cartOpen, setCartOpen] = useState(false)
-  const [orderUpdates, setOrderUpdates] = useState(true)
-  const [dropUpdates, setDropUpdates] = useState(false)
-  const [activeProductId, setActiveProductId] = useState<string | null>(null)
-  const [toastQueue, setToastQueue] = useState<ToastMessage[]>([])
+  const search = ref('')
+  const activeCategory = ref<'all' | Category>('all')
+  const cartItems = ref<CartItem[]>([])
+  const cartOpen = ref(false)
+  const orderUpdates = ref(true)
+  const dropUpdates = ref(false)
+  const activeProductId = ref<string | null>(null)
+  const toastQueue = ref<ToastMessage[]>([])
 
-  useEffect(() => {
-    const savedEmail = window.localStorage.getItem(SESSION_KEY)
-    if (savedEmail) {
-      setSessionEmail(savedEmail)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (sessionEmail) {
-      window.localStorage.setItem(SESSION_KEY, sessionEmail)
-      return
-    }
-    window.localStorage.removeItem(SESSION_KEY)
-  }, [sessionEmail])
-
-  useEffect(() => {
-    if (!cartOpen && !activeProductId) {
-      return
-    }
-
+  onMounted(() => {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setCartOpen(false)
-        setActiveProductId(null)
+        cartOpen.value = false
+        activeProductId.value = null
       }
     }
 
     window.addEventListener('keydown', onEscape)
-    return () => window.removeEventListener('keydown', onEscape)
-  }, [activeProductId, cartOpen])
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onEscape)
+    })
+  })
 
-  const productById = useMemo(
-    () => new Map(products.map((product) => [product.id, product])),
-    [products],
+  const productById = computed(() => new Map(products.map((product) => [product.id, product])))
+
+  const cartLines = computed(() =>
+    cartItems.value
+      .map((item) => {
+        const product = productById.value.get(item.productId)
+        if (!product) {
+          return null
+        }
+
+        return {
+          ...item,
+          product,
+          lineTotal: item.quantity * product.price,
+        }
+      })
+      .filter((line): line is NonNullable<typeof line> => line !== null),
   )
 
-  const cartLines = useMemo(
-    () =>
-      cartItems
-        .map((item) => {
-          const product = productById.get(item.productId)
-          if (!product) {
-            return null
-          }
+  const itemCount = computed(() => cartLines.value.reduce((total, line) => total + line.quantity, 0))
+  const subtotal = computed(() => cartLines.value.reduce((total, line) => total + line.lineTotal, 0))
+  const creditUsed = computed(() => Math.min(COMPANY_CREDIT, subtotal.value))
+  const creditRemaining = computed(() => Math.max(COMPANY_CREDIT - creditUsed.value, 0))
+  const walletToPay = computed(() => Math.max(subtotal.value - COMPANY_CREDIT, 0))
 
-          return {
-            ...item,
-            product,
-            lineTotal: item.quantity * product.price,
-          }
-        })
-        .filter((line): line is NonNullable<typeof line> => line !== null),
-    [cartItems, productById],
-  )
+  const activeProduct = computed(() => {
+    if (!activeProductId.value) {
+      return null
+    }
 
-  const itemCount = cartLines.reduce((total, line) => total + line.quantity, 0)
-  const subtotal = cartLines.reduce((total, line) => total + line.lineTotal, 0)
-  const creditUsed = Math.min(COMPANY_CREDIT, subtotal)
-  const creditRemaining = Math.max(COMPANY_CREDIT - creditUsed, 0)
-  const walletToPay = Math.max(subtotal - COMPANY_CREDIT, 0)
+    return productById.value.get(activeProductId.value) ?? null
+  })
 
-  const activeProduct = activeProductId ? productById.get(activeProductId) : null
-
-  const addToCart = (
-    productId: string,
-    selectedOptions: Record<string, string>,
-    quantity = 1,
-  ) => {
+  const addToCart = (productId: string, selectedOptions: Record<string, string>, quantity = 1) => {
     const normalizedQuantity = Math.max(1, Math.min(quantity, 25))
     const cartItemId = buildCartItemId(productId, selectedOptions)
 
-    setCartItems((previous) => {
-      const existingIndex = previous.findIndex((item) => item.id === cartItemId)
-      if (existingIndex === -1) {
-        return [
-          ...previous,
-          {
-            id: cartItemId,
-            productId,
-            quantity: normalizedQuantity,
-            selectedOptions,
-          },
-        ]
-      }
+    const existingIndex = cartItems.value.findIndex((item) => item.id === cartItemId)
+    if (existingIndex === -1) {
+      cartItems.value = [
+        ...cartItems.value,
+        {
+          id: cartItemId,
+          productId,
+          quantity: normalizedQuantity,
+          selectedOptions,
+        },
+      ]
+      return
+    }
 
-      const next = [...previous]
-      next[existingIndex] = {
-        ...next[existingIndex],
-        quantity: Math.min(25, next[existingIndex].quantity + normalizedQuantity),
-      }
-      return next
-    })
+    const next = [...cartItems.value]
+    next[existingIndex] = {
+      ...next[existingIndex],
+      quantity: Math.min(25, next[existingIndex].quantity + normalizedQuantity),
+    }
+    cartItems.value = next
   }
 
   const removeCartItem = (cartItemId: string) => {
-    setCartItems((previous) => previous.filter((item) => item.id !== cartItemId))
+    cartItems.value = cartItems.value.filter((item) => item.id !== cartItemId)
   }
 
   const updateCartItemQuantity = (cartItemId: string, nextQuantity: number) => {
@@ -144,15 +108,13 @@ export function useMerchStore(products: Product[]) {
       return
     }
 
-    setCartItems((previous) =>
-      previous.map((item) =>
-        item.id === cartItemId ? { ...item, quantity } : item,
-      ),
+    cartItems.value = cartItems.value.map((item) =>
+      item.id === cartItemId ? { ...item, quantity } : item,
     )
   }
 
   const quickAdd = (productId: string) => {
-    const product = productById.get(productId)
+    const product = productById.value.get(productId)
     if (!product) {
       return
     }
@@ -165,39 +127,20 @@ export function useMerchStore(products: Product[]) {
   }
 
   const resetCart = () => {
-    setCartItems([])
+    cartItems.value = []
   }
 
   const enqueueToast = (message: string) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    setToastQueue((previous) => [...previous, { id, message }])
+    toastQueue.value = [...toastQueue.value, { id, message }]
 
     window.setTimeout(() => {
-      setToastQueue((previous) => previous.filter((toast) => toast.id !== id))
+      toastQueue.value = toastQueue.value.filter((toast) => toast.id !== id)
     }, 2300)
-  }
-
-  const login = (email: string) => {
-    setSessionEmail(email)
-    setLoginEmail('')
-    setLoginError(null)
-    setActiveTab('catalog')
-  }
-
-  const logout = () => {
-    setSessionEmail(null)
-    setActiveTab('catalog')
-    setCartOpen(false)
-    setActiveProductId(null)
-    resetCart()
   }
 
   return {
     state: {
-      sessionEmail,
-      loginEmail,
-      loginError,
-      activeTab,
       search,
       activeCategory,
       cartOpen,
@@ -216,24 +159,30 @@ export function useMerchStore(products: Product[]) {
       activeProduct,
     },
     actions: {
-      setSessionEmail,
-      setLoginEmail,
-      setLoginError,
-      setActiveTab,
-      setSearch,
-      setActiveCategory,
-      setCartOpen,
-      setOrderUpdates,
-      setDropUpdates,
-      setActiveProductId,
+      setSearch: (value: string) => {
+        search.value = value
+      },
+      setActiveCategory: (value: 'all' | Category) => {
+        activeCategory.value = value
+      },
+      setCartOpen: (value: boolean) => {
+        cartOpen.value = value
+      },
+      setOrderUpdates: (value: boolean) => {
+        orderUpdates.value = value
+      },
+      setDropUpdates: (value: boolean) => {
+        dropUpdates.value = value
+      },
+      setActiveProductId: (value: string | null) => {
+        activeProductId.value = value
+      },
       addToCart,
       quickAdd,
       removeCartItem,
       updateCartItemQuantity,
       resetCart,
       enqueueToast,
-      login,
-      logout,
     },
   }
 }
