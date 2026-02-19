@@ -46,8 +46,18 @@
             +{{ remainingCount }} autre(s) article(s)
           </p>
         </div>
-        <div class="mx-auto grid max-w-md gap-2 sm:grid-cols-2">
-          <Button variant="outline" :disabled="lockActionBusy" @click="$emit('unlock-and-back')">
+        <div
+          :class="[
+            'mx-auto grid w-xl max-w-md gap-2',
+            viewOnly ? 'grid-cols-1' : 'sm:grid-cols-2',
+          ]"
+        >
+          <Button
+            v-if="!viewOnly"
+            variant="outline"
+            :disabled="lockActionBusy"
+            @click="$emit('unlock-and-back')"
+          >
             {{ t.unlockOrder }}
           </Button>
           <Button @click="$emit('back')">{{ t.backToCatalog }}</Button>
@@ -95,6 +105,7 @@ const props = defineProps<{
   }>;
   deadlineLabel: string;
   lockActionBusy?: boolean;
+  viewOnly?: boolean;
 }>();
 
 defineEmits<{

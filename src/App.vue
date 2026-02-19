@@ -37,12 +37,17 @@
         />
       </div>
       <div v-else-if="currentView === 'catalog'">
-        <p
+        <div
           v-if="isReadOnlyForCurrentUser"
-          class="text-muted-foreground mb-4 text-sm font-medium"
+          class="border-border/70 mb-4 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.15),rgba(255,0,53,0.12))] p-4 shadow-sm"
         >
-          {{ t.viewOnlyBadge }}
-        </p>
+          <p class="text-foreground font-semibold">
+            {{ t.viewOnlyBannerTitle }}
+          </p>
+          <p class="text-foreground/85 mt-1 text-sm">
+            {{ t.viewOnlyBannerBody }}
+          </p>
+        </div>
         <div
           v-if="!sessionUser"
           class="border-border/70 mb-4 flex flex-col gap-3 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.18),rgba(255,0,53,0.14))] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-[linear-gradient(135deg,rgba(255,160,0,0.24),rgba(255,0,53,0.2))]"
@@ -143,6 +148,7 @@
         :cart-lines="placedOrderPreview.cartLines"
         :deadline-label="lockDeadlineLabel"
         :lock-action-busy="lockActionBusy"
+        :view-only="isReadOnlyForCurrentUser"
         @back="onBackToCatalog"
         @unlock-and-back="onUnlockAndBackToCatalog"
       />
@@ -423,7 +429,7 @@ const isLockDeadlinePassed = computed(
 );
 const isOrderEditable = computed(() => Boolean(sessionUser.value));
 const isReadOnlyForCurrentUser = computed(
-  () => isViewOnly.value && !isAdmin.value,
+  () => isViewOnly.value,
 );
 const orderStatusMessage = computed(() => {
   if (!activeOrderConfirmedAt.value) {

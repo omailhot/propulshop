@@ -155,7 +155,7 @@
         class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
       >
         <p class="text-sm font-medium">
-          Mode lecture seule global pour les non-admins
+          Mode lecture seule global
         </p>
         <Button
           size="sm"
@@ -177,7 +177,7 @@
       >
         <h3 class="text-lg font-semibold">Confirmation requise</h3>
         <p class="text-muted-foreground mt-2 text-sm">
-          Cette action active le mode lecture seule global pour les non-admins.
+          Cette action active le mode lecture seule global.
         </p>
         <p class="text-muted-foreground mt-1 text-sm">
           Personne n'aura accès au shop pour ajouter, modifier ou confirmer une

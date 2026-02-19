@@ -104,6 +104,8 @@ export type MerchCopy = {
 	viewOnlyEnable: string;
 	viewOnlyDisable: string;
 	viewOnlyBadge: string;
+	viewOnlyBannerTitle: string;
+	viewOnlyBannerBody: string;
 	adminEmail: string;
 	totalPerPerson: string;
 	billablePerPerson: string;
@@ -227,9 +229,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		overwriteOrderAction: "Overwrite order",
 		policy:
 			"Propulso applies $250 credit first, then any remaining amount is paid from your personal wallet.",
-		viewOnlyEnable: "Enable view-only",
-		viewOnlyDisable: "Disable view-only",
+		viewOnlyEnable: "Enable read-only mode",
+		viewOnlyDisable: "Disable read-only mode",
 		viewOnlyBadge: "View-only mode enabled",
+		viewOnlyBannerTitle: "Ordering is currently unavailable",
+		viewOnlyBannerBody:
+			"The March 1, 2026 deadline has passed. You can still view products, but ordering is disabled for now.",
 		adminEmail: "Admin e-mail",
 		totalPerPerson: "Total per person",
 		billablePerPerson: "Billable",
@@ -357,9 +362,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		overwriteOrderAction: "Écraser la commande",
 		policy:
 			"Propulso applique d'abord 250 $ de Crédit comité social, puis le reste est payé depuis votre portefeuille personnel.",
-		viewOnlyEnable: "Activer mode lecture",
-		viewOnlyDisable: "Désactiver mode lecture",
+		viewOnlyEnable: "Activer lecture seule",
+		viewOnlyDisable: "Désactiver lecture seule",
 		viewOnlyBadge: "Mode lecture activé",
+		viewOnlyBannerTitle: "Commande indisponible pour le moment",
+		viewOnlyBannerBody:
+			"Vous pouvez consulter les produits, mais il n'est pas possible de commander pour le moment.",
 		adminEmail: "Courriel admin",
 		totalPerPerson: "Total par personne",
 		billablePerPerson: "Facturable",

@@ -48,7 +48,12 @@
           {{ group.options.map((option) => option.label[locale]).join(" / ") }}
         </p>
 
-        <div class="mt-auto grid grid-cols-2 gap-2 pt-4">
+        <div
+          :class="[
+            'mt-auto grid gap-2 pt-4',
+            viewOnly ? 'grid-cols-1' : 'grid-cols-2',
+          ]"
+        >
           <Button
             variant="outline"
             @click.stop="$emit('open-product', product.id)"
