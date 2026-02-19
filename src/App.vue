@@ -16,6 +16,7 @@
     @sign-out="onSignOut"
     @open-admin="onOpenAdmin"
     @open-catalog="currentView = 'catalog'"
+    @open-home="onBackToCatalog"
   />
 
   <main
@@ -35,7 +36,7 @@
           @toggle-view-only="toggleViewOnly"
         />
       </div>
-      <div class="mt-5" v-else-if="currentView === 'catalog'">
+      <div v-else-if="currentView === 'catalog'">
         <p
           v-if="isReadOnlyForCurrentUser"
           class="text-muted-foreground mb-4 text-sm font-medium"

@@ -10,7 +10,13 @@
           <p class="mb-2 text-sm font-medium">Résumé des articles commandés</p>
           <ul class="space-y-1 text-sm text-muted-foreground">
             <li v-for="line in recapLines" :key="line.id">
-              {{ line.product.name[locale] }} x{{ line.quantity }}
+              <p>{{ line.product.name[locale] }} x{{ line.quantity }}</p>
+              <p
+                v-if="getVariantSummary(line).length > 0"
+                class="text-xs text-muted-foreground/90"
+              >
+                {{ getVariantSummary(line).join(" · ") }}
+              </p>
             </li>
           </ul>
           <p v-if="remainingCount > 0" class="mt-2 text-xs text-muted-foreground">
@@ -46,8 +52,20 @@ const props = defineProps<{
   cartLines: Array<{
     id: string;
     quantity: number;
+    selectedOptions: Record<string, string>;
+    selectedOptionLabels?: Record<string, string>;
     product: {
       name: Record<StoreLocale, string>;
+      variantGroups?: Array<{
+        id: string;
+        label: Record<StoreLocale, string>;
+        type: "size" | "color" | "select";
+        options: Array<{
+          id: string;
+          label: Record<StoreLocale, string>;
+          swatchHex?: string;
+        }>;
+      }>;
     };
   }>;
   deadlineLabel: string;
@@ -63,4 +81,33 @@ const recapLines = computed(() => props.cartLines.slice(0, 4));
 const remainingCount = computed(() =>
   Math.max(props.cartLines.length - recapLines.value.length, 0),
 );
+
+const getVariantSummary = (line: (typeof props.cartLines)[number]) => {
+  const fromGroups = (line.product.variantGroups ?? [])
+    .map((group) => {
+      const selectedValue = line.selectedOptions[group.id];
+      if (!selectedValue) {
+        return null;
+      }
+      const option = group.options.find((item) => item.id === selectedValue);
+      const label = option?.label?.[props.locale];
+      return label ? `${group.label[props.locale]}: ${label}` : null;
+    })
+    .filter((value): value is string => Boolean(value));
+
+  if (fromGroups.length > 0) {
+    return fromGroups;
+  }
+
+  const fromSavedLabels = Object.entries(line.selectedOptionLabels ?? {})
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `${key}: ${value}`);
+  if (fromSavedLabels.length > 0) {
+    return fromSavedLabels;
+  }
+
+  return Object.entries(line.selectedOptions)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `${key}: ${value}`);
+};
 </script>

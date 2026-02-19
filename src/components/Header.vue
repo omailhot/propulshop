@@ -3,25 +3,29 @@
     class="bg-background/90 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-40 border-b backdrop-blur"
   >
     <div
-      class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6"
+      class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6"
     >
-      <a :href="localizedHome" class="group flex items-center gap-3">
+      <a
+        :href="localizedHome"
+        class="group flex min-w-0 flex-1 items-center gap-3"
+        @click.prevent="$emit('open-home')"
+      >
         <img
           src="/favicon.ico"
           alt="Propulso logo"
-          class="border-border/70 bg-background size-10 rounded-xl border object-contain p-1 shadow-sm transition group-hover:scale-105"
+          class="border-border/70 bg-background size-10 shrink-0 rounded-xl border object-contain p-1 shadow-sm transition group-hover:scale-105"
         />
-        <div>
-          <p class="font-semibold tracking-tight">
+        <div class="min-w-0">
+          <p class="truncate font-semibold tracking-tight">
             {{ title ?? m.header_name() }}
           </p>
-          <p class="text-muted-foreground text-xs">
+          <p class="text-muted-foreground truncate text-xs">
             {{ subtitle ?? m.header_subtitle() }}
           </p>
         </div>
       </a>
 
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <template v-if="isAuthenticated">
           <span class="text-muted-foreground hidden text-xs sm:inline">{{
             sessionEmail
@@ -42,23 +46,10 @@
           >
             {{ catalogLabel ?? "Catalog" }}
           </Button>
-          <Button size="sm" variant="ghost" @click="$emit('sign-out')">{{
-            signOutLabel ?? "Sign out"
-          }}</Button>
+          <Button size="sm" variant="ghost" @click="$emit('sign-out')">
+            {{ signOutLabel ?? "Sign out" }}
+          </Button>
         </template>
-        <Button
-          v-else
-          size="sm"
-          variant="outline"
-          :disabled="authBusy"
-          @click="$emit('connect-google')"
-        >
-          {{
-            authBusy
-              ? (connectingLabel ?? "Connexion...")
-              : (connectGoogleLabel ?? "Connexion Google")
-          }}
-        </Button>
         <ThemeToggle />
       </div>
     </div>
@@ -91,6 +82,7 @@ defineEmits<{
   "sign-out": [];
   "open-admin": [];
   "open-catalog": [];
+  "open-home": [];
 }>();
 
 const localizedHome = localizeHref("/");
