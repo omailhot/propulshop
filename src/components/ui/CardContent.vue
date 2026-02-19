@@ -1,9 +1,9 @@
 <template>
-  <div :class="cn('px-6', $attrs.class as string)">
+  <ShadCardContent v-bind="$attrs">
     <slot />
-  </div>
+  </ShadCardContent>
 </template>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
+import { CardContent as ShadCardContent } from "@/components/ui/card";
 </script>

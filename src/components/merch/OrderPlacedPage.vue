@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="ml-auto mr-auto mt-5 flex min-h-[calc(80vh-12rem)] w-full max-w-7xl flex-col items-center justify-center gap-6 px-4">
     <Card class="mx-auto max-w-xl shadow-md">
       <CardHeader class="text-center">
@@ -7,16 +7,39 @@
       </CardHeader>
       <CardContent class="space-y-4">
         <div v-if="recapLines.length > 0" class="rounded-xl border bg-muted/20 p-3">
-          <p class="mb-2 text-sm font-medium">Résumé des articles commandés</p>
-          <ul class="space-y-1 text-sm text-muted-foreground">
+          <p class="mb-2 text-sm font-medium">Resume des articles commandes</p>
+          <ul class="space-y-2 text-sm text-muted-foreground">
             <li v-for="line in recapLines" :key="line.id">
-              <p>{{ line.product.name[locale] }} x{{ line.quantity }}</p>
-              <p
-                v-if="getVariantSummary(line).length > 0"
-                class="text-xs text-muted-foreground/90"
-              >
-                {{ getVariantSummary(line).join(" · ") }}
-              </p>
+              <div class="flex items-start gap-2">
+                <div
+                  class="bg-muted/20 h-12 w-12 shrink-0 overflow-hidden rounded-lg border"
+                >
+                  <img
+                    v-if="line.product.imageGallery?.[0]"
+                    :src="line.product.imageGallery[0]"
+                    :alt="line.product.name[locale]"
+                    class="h-full w-full object-contain p-1"
+                    loading="lazy"
+                  />
+                  <div
+                    v-else
+                    :class="[
+                      'h-full w-full bg-gradient-to-br',
+                      line.product.gradientClass ??
+                        'from-zinc-200/60 via-zinc-100/40 to-transparent',
+                    ]"
+                  />
+                </div>
+                <div class="min-w-0">
+                  <p>{{ line.product.name[locale] }} x{{ line.quantity }}</p>
+                  <p
+                    v-if="getVariantSummary(line).length > 0"
+                    class="text-xs text-muted-foreground/90"
+                  >
+                    {{ getVariantSummary(line).join(" · ") }}
+                  </p>
+                </div>
+              </div>
             </li>
           </ul>
           <p v-if="remainingCount > 0" class="mt-2 text-xs text-muted-foreground">
@@ -56,6 +79,8 @@ const props = defineProps<{
     selectedOptionLabels?: Record<string, string>;
     product: {
       name: Record<StoreLocale, string>;
+      imageGallery?: string[];
+      gradientClass?: string;
       variantGroups?: Array<{
         id: string;
         label: Record<StoreLocale, string>;

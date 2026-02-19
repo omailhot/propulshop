@@ -74,7 +74,12 @@
               <span>{{ formatCurrency.format(subtotal) }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-muted-foreground">{{ t.creditUsed }}</span>
+              <span class="text-muted-foreground inline-flex items-center gap-1">
+                {{ t.creditUsed }}
+                <Tooltip :content="t.creditCommitteeTooltip">
+                  <CircleHelp class="size-3.5" />
+                </Tooltip>
+              </span>
               <span>-{{ formatCurrency.format(creditUsed) }}</span>
             </div>
             <div class="flex items-center justify-between">
@@ -108,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ShoppingBasket } from "lucide-vue-next";
+import { ArrowRight, CircleHelp, ShoppingBasket } from "lucide-vue-next";
 
 import Button from "@/components/ui/Button.vue";
 import Card from "@/components/ui/Card.vue";
@@ -116,6 +121,7 @@ import CardContent from "@/components/ui/CardContent.vue";
 import CardHeader from "@/components/ui/CardHeader.vue";
 import CardTitle from "@/components/ui/CardTitle.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
+import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
 import type { ProductVariantGroup, StoreLocale } from "@/types/merch";
 
@@ -163,3 +169,5 @@ const getVariantLabels = (line: CartLine) =>
     })
     .filter((value): value is string => Boolean(value));
 </script>
+
+

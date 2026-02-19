@@ -1,26 +1,13 @@
 <template>
-  <button
-    type="button"
-    :aria-checked="modelValue"
-    role="checkbox"
-    :class="
-      cn(
-        'peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-        modelValue ? 'bg-primary text-primary-foreground border-primary' : '',
-        $attrs.class as string,
-      )
-    "
+  <ShadCheckbox
+    :model-value="modelValue"
     v-bind="$attrs"
-    @click="emit('update:modelValue', !modelValue)"
-  >
-    <CheckIcon v-if="modelValue" class="size-3.5" />
-  </button>
+    @update:model-value="emit('update:modelValue', Boolean($event))"
+  />
 </template>
 
 <script setup lang="ts">
-import { CheckIcon } from "lucide-vue-next";
-
-import { cn } from "@/lib/utils";
+import { Checkbox as ShadCheckbox } from "@/components/ui/checkbox";
 
 defineProps<{
   modelValue: boolean;

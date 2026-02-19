@@ -1,11 +1,9 @@
 <template>
-  <hr :class="separatorClass" v-bind="$attrs" />
+  <ShadSeparator :orientation="props.orientation" v-bind="$attrs" />
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from "vue";
-
-import { cn } from "@/lib/utils";
+import { Separator as ShadSeparator } from "@/components/ui/separator";
 
 const props = withDefaults(
   defineProps<{
@@ -14,15 +12,5 @@ const props = withDefaults(
   {
     orientation: "horizontal",
   },
-);
-
-const attrs = useAttrs();
-
-const separatorClass = computed(() =>
-  cn(
-    "bg-border shrink-0",
-    props.orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
-    (attrs.class as string) ?? "",
-  ),
 );
 </script>

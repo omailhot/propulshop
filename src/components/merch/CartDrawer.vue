@@ -1,26 +1,30 @@
 <template>
   <Drawer :open="open" :title="t.cartBuilder" @close="$emit('close')">
-    <div class="mx-auto flex max-w-4xl items-center justify-between">
-      <div>
-        <h2 class="text-lg font-semibold">{{ t.cartBuilder }}</h2>
+    <div class="mx-auto w-full max-w-6xl">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">{{ t.cartBuilder }}</h2>
+        </div>
+        <Button variant="ghost" size="icon" @click="$emit('close')">
+          <X class="size-4" />
+        </Button>
+      </div>
+      <div class="mt-1 flex items-center justify-between gap-2">
         <p class="text-muted-foreground text-xs">{{ t.policy }}</p>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="readOnly"
-        @click="$emit('reset-cart')"
-      >
-        {{ t.resetCart }}
-      </Button>
-      <Button variant="ghost" size="icon" @click="$emit('close')">
-        <X class="size-4" />
-      </Button>
+      <div class="mt-2 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="readOnly"
+          @click="$emit('reset-cart')"
+        >
+          {{ t.resetCart }}
+        </Button>
+      </div>
     </div>
 
-    <div
-      class="mx-auto mt-4 grid max-w-4xl gap-5 pb-4 md:grid-cols-[1.45fr_1fr]"
-    >
+    <div class="mx-auto mt-4 grid w-full max-w-6xl gap-5 pb-8 md:grid-cols-[1.45fr_1fr]">
       <div class="max-h-[50vh] space-y-3 overflow-auto pr-1">
         <div
           v-if="cartLines.length === 0"
@@ -81,7 +85,12 @@
             <span>{{ formatCurrency.format(subtotal) }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">{{ t.creditUsed }}</span>
+            <span class="text-muted-foreground inline-flex items-center gap-1">
+              {{ t.creditUsed }}
+              <Tooltip :content="t.creditCommitteeTooltip">
+                <CircleHelp class="size-3.5" />
+              </Tooltip>
+            </span>
             <span>-{{ formatCurrency.format(creditUsed) }}</span>
           </div>
           <div class="flex items-center justify-between">
@@ -110,11 +119,12 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ShoppingBasket, X } from "lucide-vue-next";
+import { ArrowRight, CircleHelp, ShoppingBasket, X } from "lucide-vue-next";
 
 import Button from "@/components/ui/Button.vue";
 import Drawer from "@/components/ui/Drawer.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
+import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
 import type { ProductVariantGroup, StoreLocale } from "@/types/merch";
 
@@ -164,3 +174,5 @@ const getVariantLabels = (line: CartLine) =>
     })
     .filter((value): value is string => Boolean(value));
 </script>
+
+

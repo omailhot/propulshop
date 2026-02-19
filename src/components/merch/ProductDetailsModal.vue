@@ -1,13 +1,16 @@
 <template>
   <Drawer :open="open" :title="t.productDetails" @close="$emit('close')">
-    <div v-if="product" class="mx-auto max-w-6xl">
+    <div
+      v-if="product"
+      class="mx-auto w-full max-h-[calc(86dvh-2rem)] max-w-7xl overflow-y-auto pr-1"
+    >
       <div class="mb-4 flex justify-end">
         <Button variant="ghost" size="icon" @click="$emit('close')">
           <X class="size-4" />
         </Button>
       </div>
 
-      <div class="grid gap-5 md:grid-cols-[1.35fr_0.65fr]">
+      <div class="grid w-full gap-5 md:grid-cols-[1.35fr_0.65fr]">
         <ProductImageCarousel
           :id="product.id"
           :alt="product.name[locale]"
@@ -16,8 +19,8 @@
           class-name="h-[22rem] border md:h-[30rem]"
         />
 
-        <div class="bg-muted/20 flex max-h-[70vh] flex-col rounded-xl border p-4">
-          <div class="space-y-4 overflow-y-auto pb-4">
+        <div class="bg-muted/20 flex max-h-[70vh] min-h-0 flex-col rounded-xl border p-4">
+          <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pb-24 pr-1">
             <div>
               <h2 class="text-xl font-semibold">{{ product.name[locale] }}</h2>
               <p class="text-muted-foreground text-sm">
@@ -29,7 +32,9 @@
             </div>
 
             <div v-for="group in variantGroups" :key="group.id">
-              <p class="mb-2 text-sm font-medium">{{ group.label[locale] }}</p>
+              <p class="mb-2 text-sm font-medium">
+                {{ getVariantGroupLabel(group) }}
+              </p>
               <div class="flex flex-wrap gap-2">
                 <Button
                   v-for="option in group.options"
@@ -76,12 +81,11 @@ import { X } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
-import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import Drawer from "@/components/ui/Drawer.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import type { Product, StoreLocale } from "@/types/merch";
+import type { Product, ProductVariantGroup, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
   t: MerchCopy;
@@ -122,20 +126,15 @@ watch(
 
 const variantGroups = computed(() => props.product?.variantGroups ?? []);
 
-const selectedVariantLabels = computed(() =>
-  variantGroups.value
-    .map((group) => {
-      const selected = group.options.find(
-        (option) => option.id === selections.value[group.id],
-      );
-      if (!selected) {
-        return null;
-      }
-
-      return `${group.label[props.locale]}: ${selected.label[props.locale]}`;
-    })
-    .filter((value): value is string => Boolean(value)),
-);
+const getVariantGroupLabel = (group: ProductVariantGroup) => {
+  if (group.type === "size") {
+    return props.locale === "fr" ? "Tailles" : "Sizes";
+  }
+  if (group.type === "color") {
+    return props.locale === "fr" ? "Couleurs" : "Colors";
+  }
+  return group.label[props.locale];
+};
 
 const setSelection = (groupId: string, optionId: string) => {
   selections.value = {

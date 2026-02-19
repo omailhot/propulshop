@@ -1,16 +1,9 @@
 <template>
-  <div
-    :class="
-      cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
-        $attrs.class as string,
-      )
-    "
-  >
+  <ShadCard v-bind="$attrs">
     <slot />
-  </div>
+  </ShadCard>
 </template>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
+import { Card as ShadCard } from "@/components/ui/card";
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border-border/70 bg-background/95 inline-flex items-center gap-1 overflow-hidden rounded-full border p-1.5"
+    class="border-border/70 bg-background/95 mb-2 inline-flex items-center gap-1 overflow-hidden rounded-full border p-1.5 sm:mb-0"
   >
     <button
       type="button"

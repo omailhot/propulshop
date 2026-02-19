@@ -1,26 +1,24 @@
 <template>
-  <button
+  <ShadButton
+    :variant="variant"
+    :size="size"
     :type="resolvedType"
-    :class="buttonVariants({ variant, size })"
     v-bind="$attrs"
   >
     <slot />
-  </button>
+  </ShadButton>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 
-import {
-  type ButtonSize,
-  type ButtonVariant,
-  buttonVariants,
-} from "@/components/ui/button";
+import { Button as ShadButton } from "@/components/ui/button/index";
+import type { ButtonVariants } from "@/components/ui/button/index";
 
 const props = withDefaults(
   defineProps<{
-    variant?: ButtonVariant;
-    size?: ButtonSize;
+    variant?: ButtonVariants["variant"];
+    size?: ButtonVariants["size"];
     type?: "button" | "submit" | "reset";
   }>(),
   {

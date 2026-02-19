@@ -1,50 +1,34 @@
 <template>
-  <teleport to="body">
-    <div
-      :class="
-        cn(
-          'fixed inset-0 z-50 transition',
-          open ? 'pointer-events-auto' : 'pointer-events-none',
-        )
-      "
+  <UiDrawer :open="open" @update:open="onUpdateOpen">
+    <UiDrawerContent
+      :aria-label="title"
+      class="bg-background data-[vaul-drawer-direction=bottom]:max-h-[86vh] data-[vaul-drawer-direction=bottom]:rounded-t-2xl"
     >
-      <button
-        type="button"
-        :aria-label="title"
-        :class="
-          cn(
-            'absolute inset-0 bg-black/45 transition-opacity',
-            open ? 'opacity-100' : 'opacity-0',
-          )
-        "
-        @click="$emit('close')"
-      />
-      <section
-        role="dialog"
-        aria-modal="true"
-        :aria-label="title"
-        :class="
-          cn(
-            'bg-background absolute inset-x-0 bottom-0 max-h-[86vh] rounded-t-2xl border-t p-4 shadow-2xl transition-transform sm:p-6',
-            open ? 'translate-y-0' : 'translate-y-full',
-          )
-        "
-      >
+      <div class="mx-auto w-full max-w-[96rem] px-4 pb-8 sm:px-6 sm:pb-10">
         <slot />
-      </section>
-    </div>
-  </teleport>
+      </div>
+    </UiDrawerContent>
+  </UiDrawer>
 </template>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
+import {
+  Drawer as UiDrawer,
+  DrawerContent as UiDrawerContent,
+} from "@/components/ui/drawer";
 
-defineProps<{
+const props = defineProps<{
   open: boolean;
   title: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
 }>();
+
+const onUpdateOpen = (nextOpen: boolean) => {
+  if (!nextOpen && props.open) {
+    emit("close");
+  }
+};
 </script>

@@ -1,4 +1,5 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 import { COMPANY_CREDIT } from "@/config/merch-store";
 import {
@@ -7,11 +8,6 @@ import {
 	resolveOrderProductSelection,
 } from "@/lib/merch-order";
 import type { CartItem, Category, Product } from "@/types/merch";
-
-type ToastMessage = {
-	id: string;
-	message: string;
-};
 
 const CART_SESSION_KEY = "propulso-merch-cart";
 
@@ -22,7 +18,6 @@ export function useMerchStore(products: Product[]) {
 	const orderUpdates = ref(true);
 	const dropUpdates = ref(false);
 	const activeProductId = ref<string | null>(null);
-	const toastQueue = ref<ToastMessage[]>([]);
 
 	const persistCartToSession = () => {
 		if (typeof window === "undefined") {
@@ -272,12 +267,9 @@ export function useMerchStore(products: Product[]) {
 	};
 
 	const enqueueToast = (message: string) => {
-		const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-		toastQueue.value = [...toastQueue.value, { id, message }];
-
-		window.setTimeout(() => {
-			toastQueue.value = toastQueue.value.filter((toast) => toast.id !== id);
-		}, 2300);
+		toast.success(message, {
+			duration: 2300,
+		});
 	};
 
 	return {
@@ -287,7 +279,6 @@ export function useMerchStore(products: Product[]) {
 			orderUpdates,
 			dropUpdates,
 			activeProductId,
-			toastQueue,
 		},
 		derived: {
 			cartLines,

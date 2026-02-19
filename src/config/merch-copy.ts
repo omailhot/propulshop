@@ -52,6 +52,7 @@ export type MerchCopy = {
 	creditAvailable: string;
 	creditUsed: string;
 	creditRemaining: string;
+	creditCommitteeTooltip: string;
 	walletToPay: string;
 	settingsTitle: string;
 	settingOrderUpdates: string;
@@ -168,6 +169,8 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		creditAvailable: "Credit available",
 		creditUsed: "Credit used",
 		creditRemaining: "Credit remaining",
+		creditCommitteeTooltip:
+			"To finish the fiscal year in style, we offer employees up to $250 of store credit for Propulso merch. Any amount above this will be billed when the order is placed.",
 		walletToPay: "From your wallet",
 		settingsTitle: "Settings",
 		settingOrderUpdates: "Order status e-mails",
@@ -241,7 +244,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 			"Choisissez vos articles en temps réel, suivez votre budget et envoyez un panier clair.",
 		landingBullet1: "Catalogue sélectif avec quantités en direct",
 		landingBullet2:
-			"Partage entre crédit entreprise et portefeuille toujours visible",
+			"Partage entre Crédit comité social et portefeuille toujours visible",
 		landingBullet3: "Profil, préférences et notifications inclus",
 		landingCta: "Accéder à la boutique employé",
 		loginTitle: "Connexion employé",
@@ -288,10 +291,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		backToCatalogShort: "Catalogue",
 		walletTitle: "Portefeuille",
 		walletSubtitle:
-			"Le crédit Propulso est appliqué en premier. Le reste est à votre charge.",
-		creditAvailable: "Crédit disponible",
-		creditUsed: "Crédit utilisé",
-		creditRemaining: "Crédit restant",
+			"Le Crédit comité social est appliqué en premier. Le reste est à votre charge.",
+		creditAvailable: "Crédit comité social disponible",
+		creditUsed: "Crédit comité social utilisé",
+		creditRemaining: "Crédit comité social restant",
+		creditCommitteeTooltip:
+			"Pour terminer l'année (fiscale) en beauté, nous souhaitons offrir aux employés jusqu'à 250 $ de crédit magasin pour acheter de la merch Propulso. Le montant excédant sera facturé au moment de la commande.",
 		walletToPay: "Depuis votre portefeuille",
 		settingsTitle: "Paramètres",
 		settingOrderUpdates: "E-mails de statut de commande",
@@ -315,7 +320,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		confirmationSubtitle: "Résumé avant validation finale.",
 		invoiceLater: "Montant facturé plus tard",
 		invoiceExplanation:
-			"Tout montant au-delà du crédit entreprise vous sera facturé après approbation interne.",
+			"Tout montant au-delà du Crédit comité social vous sera facturé après approbation interne.",
 		backToCatalog: "Retour au catalogue",
 		placeOrder: "Confirmer la sélection",
 		reopenOrder: "La commande a été réouverte.",
@@ -351,7 +356,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 			"Voulez-vous écraser votre commande existante ou la consulter?",
 		overwriteOrderAction: "Écraser la commande",
 		policy:
-			"Propulso applique d'abord 250 $ de crédit, puis le reste est payé depuis votre portefeuille personnel.",
+			"Propulso applique d'abord 250 $ de Crédit comité social, puis le reste est payé depuis votre portefeuille personnel.",
 		viewOnlyEnable: "Activer mode lecture",
 		viewOnlyDisable: "Désactiver mode lecture",
 		viewOnlyBadge: "Mode lecture activé",
@@ -362,3 +367,4 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 			"Le montant de carte cadeau doit être entre 25 $ et 250 $.",
 	},
 };
+

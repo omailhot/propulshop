@@ -1,9 +1,9 @@
 <template>
-  <div :class="cn('text-muted-foreground text-sm', $attrs.class as string)">
+  <ShadCardDescription v-bind="$attrs">
     <slot />
-  </div>
+  </ShadCardDescription>
 </template>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
+import { CardDescription as ShadCardDescription } from "@/components/ui/card";
 </script>

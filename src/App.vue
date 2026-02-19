@@ -168,7 +168,7 @@
     @add-to-cart="onAddToCart"
   />
 
-  <ToastStack :toasts="state.toastQueue.value" />
+  <Toaster position="bottom-right" />
 
   <div
     v-if="showOverwriteModal"
@@ -246,8 +246,8 @@ import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
 import OrderPlacedPage from "@/components/merch/OrderPlacedPage.vue";
 import ProductDetailsModal from "@/components/merch/ProductDetailsModal.vue";
-import ToastStack from "@/components/merch/ToastStack.vue";
 import Button from "@/components/ui/Button.vue";
+import { Toaster } from "@/components/ui/sonner";
 import { merchCopy } from "@/config/merch-copy";
 import { COMPANY_CREDIT, products } from "@/config/merch-store";
 import { useMerchStore } from "@/hooks/use-merch-store";

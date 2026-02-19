@@ -44,7 +44,7 @@
           :key="`${product.id}-${group.id}`"
           class="text-muted-foreground mt-1 text-xs"
         >
-          {{ group.label[locale] }}:
+          {{ getVariantGroupLabel(group) }}:
           {{ group.options.map((option) => option.label[locale]).join(" / ") }}
         </p>
 
@@ -83,7 +83,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
 import Button from "@/components/ui/Button.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import type { Product, StoreLocale } from "@/types/merch";
+import type { Product, ProductVariantGroup, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
   t: MerchCopy;
@@ -118,6 +118,16 @@ const loadMore = () => {
     visibleCount.value + PAGE_SIZE,
     props.products.length,
   );
+};
+
+const getVariantGroupLabel = (group: ProductVariantGroup) => {
+  if (group.type === "size") {
+    return props.locale === "fr" ? "Tailles" : "Sizes";
+  }
+  if (group.type === "color") {
+    return props.locale === "fr" ? "Couleurs" : "Colors";
+  }
+  return group.label[props.locale];
 };
 
 const reconnectObserver = () => {

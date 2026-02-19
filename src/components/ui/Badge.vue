@@ -1,15 +1,16 @@
 <template>
-  <span :class="badgeVariants({ variant })" v-bind="$attrs">
+  <ShadBadge :variant="variant" v-bind="$attrs">
     <slot />
-  </span>
+  </ShadBadge>
 </template>
 
 <script setup lang="ts">
-import { type BadgeVariant, badgeVariants } from "@/components/ui/badge";
+import { Badge as ShadBadge } from "@/components/ui/badge/index";
+import type { BadgeVariants } from "@/components/ui/badge/index";
 
 withDefaults(
   defineProps<{
-    variant?: BadgeVariant;
+    variant?: BadgeVariants["variant"];
   }>(),
   {
     variant: "default",
