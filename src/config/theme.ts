@@ -1,4 +1,4 @@
-export const THEME_STORAGE_KEY = 'propulso-theme'
+export const THEME_STORAGE_KEY = "propulso-theme";
 
 export const THEME_BOOTSTRAP_SCRIPT = `
 (() => {
@@ -11,4 +11,4 @@ export const THEME_BOOTSTRAP_SCRIPT = `
     document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
   } catch {}
 })();
-`
+`;

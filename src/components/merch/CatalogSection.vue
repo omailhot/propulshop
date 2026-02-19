@@ -4,7 +4,7 @@
       <article
         v-for="product in visibleProducts"
         :key="product.id"
-        class="flex h-full cursor-pointer flex-col rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        class="border-border/60 bg-card/80 flex h-full cursor-pointer flex-col rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         tabindex="0"
         @click="$emit('open-product', product.id)"
         @keydown.enter.prevent="$emit('open-product', product.id)"
@@ -21,25 +21,47 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <h3 class="font-semibold">{{ product.name[locale] }}</h3>
-            <p class="mt-1 text-sm text-muted-foreground">{{ product.description[locale] }}</p>
+            <p class="text-muted-foreground mt-1 text-sm">
+              {{ product.description[locale] }}
+            </p>
           </div>
           <div class="text-right">
-            <p class="font-semibold">{{ formatCurrency.format(product.price) }}</p>
-            <p class="text-xs text-muted-foreground">{{ t.perItem }}</p>
+            <p class="font-semibold">
+              {{ formatCurrency.format(product.price) }}
+            </p>
+            <p class="text-muted-foreground text-xs">{{ t.perItem }}</p>
           </div>
         </div>
 
-        <p v-if="(product.variantGroups ?? []).length > 0" class="mt-3 text-xs text-muted-foreground">
+        <p
+          v-if="(product.variantGroups ?? []).length > 0"
+          class="text-muted-foreground mt-3 text-xs"
+        >
           {{ (product.variantGroups ?? []).length }} {{ t.variants }}
+        </p>
+        <p
+          v-for="group in product.variantGroups ?? []"
+          :key="`${product.id}-${group.id}`"
+          class="text-muted-foreground mt-1 text-xs"
+        >
+          {{ group.label[locale] }}:
+          {{ group.options.map((option) => option.label[locale]).join(" / ") }}
         </p>
 
         <div class="mt-auto grid grid-cols-2 gap-2 pt-4">
-          <Button variant="outline" @click.stop="$emit('open-product', product.id)">
+          <Button
+            variant="outline"
+            @click.stop="$emit('open-product', product.id)"
+          >
             {{ t.viewDetails }}
           </Button>
-          <Button @click.stop="$emit('quick-add', product.id)">
+          <Button v-if="!viewOnly" @click.stop="$emit('quick-add', product.id)">
             <ShoppingCart class="size-4" />
-            {{ (product.variantGroups ?? []).length > 0 ? t.selectVariant : t.quickAdd }}
+            {{
+              (product.variantGroups ?? []).length > 0
+                ? t.selectVariant
+                : t.quickAdd
+            }}
           </Button>
         </div>
       </article>
@@ -55,71 +77,77 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingCart } from 'lucide-vue-next'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ShoppingCart } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
-import ProductImageCarousel from '@/components/merch/ProductImageCarousel.vue'
-import Button from '@/components/ui/Button.vue'
-import type { MerchCopy } from '@/config/merch-copy'
-import type { Product, StoreLocale } from '@/types/merch'
+import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
+import Button from "@/components/ui/Button.vue";
+import type { MerchCopy } from "@/config/merch-copy";
+import type { Product, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
-  t: MerchCopy
-  locale: StoreLocale
-  products: Product[]
-  formatCurrency: Intl.NumberFormat
-}>()
+  t: MerchCopy;
+  locale: StoreLocale;
+  products: Product[];
+  formatCurrency: Intl.NumberFormat;
+  viewOnly?: boolean;
+}>();
 
 defineEmits<{
-  'open-product': [productId: string]
-  'quick-add': [productId: string]
-}>()
+  "open-product": [productId: string];
+  "quick-add": [productId: string];
+}>();
 
-const INITIAL_VISIBLE = 9
-const PAGE_SIZE = 6
+const INITIAL_VISIBLE = 9;
+const PAGE_SIZE = 6;
 
-const visibleCount = ref(INITIAL_VISIBLE)
-const loadMoreSentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
+const visibleCount = ref(INITIAL_VISIBLE);
+const loadMoreSentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
-const visibleProducts = computed(() => props.products.slice(0, visibleCount.value))
-const hasMore = computed(() => visibleCount.value < props.products.length)
+const visibleProducts = computed(() =>
+  props.products.slice(0, visibleCount.value),
+);
+const hasMore = computed(() => visibleCount.value < props.products.length);
 
 const loadMore = () => {
   if (!hasMore.value) {
-    return
+    return;
   }
-  visibleCount.value = Math.min(visibleCount.value + PAGE_SIZE, props.products.length)
-}
+  visibleCount.value = Math.min(
+    visibleCount.value + PAGE_SIZE,
+    props.products.length,
+  );
+};
 
 const reconnectObserver = () => {
-  observer?.disconnect()
+  observer?.disconnect();
   if (!loadMoreSentinel.value || !hasMore.value) {
-    return
+    return;
   }
 
   observer = new IntersectionObserver(
     (entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
-        loadMore()
+        loadMore();
       }
     },
-    { rootMargin: '280px 0px' },
-  )
-  observer.observe(loadMoreSentinel.value)
-}
+    { rootMargin: "280px 0px" },
+  );
+  observer.observe(loadMoreSentinel.value);
+};
 
 watch(
   () => props.products.length,
   () => {
-    visibleCount.value = INITIAL_VISIBLE
-    reconnectObserver()
+    visibleCount.value = INITIAL_VISIBLE;
+    reconnectObserver();
   },
-)
+);
 
-watch(loadMoreSentinel, () => reconnectObserver())
-watch(hasMore, () => reconnectObserver())
+watch(loadMoreSentinel, () => reconnectObserver());
+watch(hasMore, () => reconnectObserver());
 
-onMounted(() => reconnectObserver())
-onUnmounted(() => observer?.disconnect())
+onMounted(() => reconnectObserver());
+onUnmounted(() => observer?.disconnect());
 </script>

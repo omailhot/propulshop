@@ -51,7 +51,8 @@
                 :model-value="line.quantity"
                 :disabled="readOnly"
                 @update:model-value="
-                  (nextQuantity) => $emit('update-item-quantity', line.id, nextQuantity)
+                  (nextQuantity) =>
+                    $emit('update-item-quantity', line.id, nextQuantity)
                 "
               />
 
@@ -87,15 +88,19 @@
               <span>{{ formatCurrency.format(creditRemaining) }}</span>
             </div>
           </div>
-          <Button
-            class="mt-4 w-full"
-            :disabled="cartLines.length === 0 || readOnly"
-            @click="$emit('continue-checkout')"
-          >
-            <ArrowRight class="size-4" />
-            {{ t.continueSelection }}
-          </Button>
-          <p class="text-muted-foreground mt-2 text-xs">{{ t.checkoutHint }}</p>
+          <template v-if="!readOnly">
+            <Button
+              class="mt-4 w-full"
+              :disabled="cartLines.length === 0"
+              @click="$emit('continue-checkout')"
+            >
+              <ArrowRight class="size-4" />
+              {{ t.continueSelection }}
+            </Button>
+            <p class="text-muted-foreground mt-2 text-xs">
+              {{ t.checkoutHint }}
+            </p>
+          </template>
         </div>
       </CardContent>
     </Card>

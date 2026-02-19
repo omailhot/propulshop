@@ -17,7 +17,7 @@ create table if not exists orders (
 
 alter table orders add column if not exists is_locked boolean not null default false;
 alter table orders add column if not exists locked_at timestamptz;
-alter table orders add column if not exists lock_deadline_at timestamptz not null default '2026-03-02T00:00:00Z'::timestamptz;
+alter table orders add column if not exists lock_deadline_at timestamptz not null default '2026-03-01T23:59:59Z'::timestamptz;
 alter table orders add column if not exists placed_at timestamptz;
 
 create table if not exists order_items (

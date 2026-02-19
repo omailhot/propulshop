@@ -41,6 +41,7 @@ psql $NEON_DATABASE_URL -f database/neon-schema.sql
 ```
 
 Alternatively, you can use the Neon Console SQL Editor:
+
 1. Go to https://console.neon.tech/app/projects/dawn-field-01773809
 2. Click on **"SQL Editor"** in the sidebar
 3. Copy and paste the contents of `database/neon-schema.sql`
@@ -61,11 +62,13 @@ The orders API endpoint will automatically connect to your Neon database once `N
 Your database includes:
 
 ### `orders` table
+
 - Order tracking with user information
 - Payment and credit information
 - Full order payload stored as JSONB
 
 ### `order_items` table
+
 - Line items for each order
 - Product details and pricing
 - Selected product options
@@ -73,6 +76,7 @@ Your database includes:
 ## Connection Methods
 
 Your app uses the **Neon Serverless Driver** (`@neondatabase/serverless`), which is optimized for:
+
 - Edge functions (Cloudflare Workers, Vercel Edge Functions)
 - Serverless functions (AWS Lambda, Vercel Functions)
 - Any environment that supports HTTP-based database queries
@@ -98,6 +102,7 @@ This driver uses HTTP to connect, making it ideal for serverless and edge enviro
 ### Connection Issues
 
 If you encounter connection errors:
+
 1. Verify your connection string is correct
 2. Ensure `sslmode=require` is included in the connection string
 3. Check that your Neon project is active (not in sleep mode)

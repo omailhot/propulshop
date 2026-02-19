@@ -1,5 +1,9 @@
 <template>
-  <div class="relative inline-block" @mouseenter="open = true" @mouseleave="open = false">
+  <div
+    class="relative inline-block"
+    @mouseenter="open = true"
+    @mouseleave="open = false"
+  >
     <slot name="trigger" />
     <transition
       enter-active-class="transition duration-150"
@@ -20,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-const open = ref(false)
+const open = ref(false);
 </script>

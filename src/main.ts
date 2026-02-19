@@ -1,12 +1,10 @@
-import { createApp } from 'vue'
+import { createApp } from "vue";
 
-import App from '@/App.vue'
-import { getLocale } from '@/paraglide/runtime'
+import App from "@/App.vue";
+import "./styles.css";
 
-import './styles.css'
+const app = createApp(App);
 
-const app = createApp(App)
+document.documentElement.setAttribute("lang", "fr");
 
-document.documentElement.setAttribute('lang', getLocale())
-
-app.mount('#app')
+app.mount("#app");

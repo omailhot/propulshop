@@ -5,14 +5,14 @@
 </template>
 
 <script setup lang="ts">
-import { badgeVariants, type BadgeVariant } from '@/components/ui/badge'
+import { type BadgeVariant, badgeVariants } from "@/components/ui/badge";
 
 withDefaults(
   defineProps<{
-    variant?: BadgeVariant
+    variant?: BadgeVariant;
   }>(),
   {
-    variant: 'default',
+    variant: "default",
   },
-)
+);
 </script>

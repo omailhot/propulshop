@@ -6,6 +6,8 @@ export type ProductVariantOption = {
   id: string
   label: Record<StoreLocale, string>
   swatchHex?: string
+  orderProductId?: string
+  priceDelta?: number
 }
 
 export type ProductVariantGroup = {
