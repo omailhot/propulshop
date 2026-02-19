@@ -126,7 +126,11 @@
                   <CircleHelp class="size-3.5" />
                 </Tooltip>
               </span>
-              <span>-{{ formatCurrency.format(creditUsed) }}</span>
+              <span>{{
+                creditUsed > 0
+                  ? `-${formatCurrency.format(creditUsed)}`
+                  : formatCurrency.format(creditUsed)
+              }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-muted-foreground">{{ t.creditRemaining }}</span>

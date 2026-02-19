@@ -114,7 +114,7 @@ export type MerchCopy = {
 
 export const merchCopy: Record<StoreLocale, MerchCopy> = {
 	en: {
-		appTitle: "Propulso Merch",
+		appTitle: "La shop Propulso",
 		appSubtitle: "Internal employee store",
 		landingBadge: "Modern Team Store",
 		landingTitle: "Premium merch experience for every employee",
@@ -241,7 +241,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		giftCardOutOfRange: "Gift card amount must be between $25 and $250.",
 	},
 	fr: {
-		appTitle: "Merch Propulso",
+		appTitle: "La shop Propulso",
 		appSubtitle: "Boutique interne",
 		landingBadge: "Boutique équipe",
 		landingTitle: "Expérience merch premium pour chaque employé",
