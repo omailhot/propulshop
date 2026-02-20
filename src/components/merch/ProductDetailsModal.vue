@@ -16,6 +16,7 @@
           :alt="product.name[locale]"
           :image-gallery="product.imageGallery"
           :gradient-class="product.gradientClass"
+          :zoomable="true"
           class-name="h-[22rem] border md:h-[30rem]"
         />
 

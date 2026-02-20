@@ -22,7 +22,7 @@
           <div>
             <h3 class="font-semibold">{{ product.name[locale] }}</h3>
             <p class="text-muted-foreground mt-1 text-sm">
-              {{ product.description[locale] }}
+              {{ getCardDescription(product.description[locale]) }}
             </p>
           </div>
           <div class="text-right">
@@ -32,21 +32,6 @@
             <p class="text-muted-foreground text-xs">{{ t.perItem }}</p>
           </div>
         </div>
-
-        <p
-          v-if="(product.variantGroups ?? []).length > 0"
-          class="text-muted-foreground mt-3 text-xs"
-        >
-          {{ (product.variantGroups ?? []).length }} {{ t.variants }}
-        </p>
-        <p
-          v-for="group in product.variantGroups ?? []"
-          :key="`${product.id}-${group.id}`"
-          class="text-muted-foreground mt-1 text-xs"
-        >
-          {{ getVariantGroupLabel(group) }}:
-          {{ group.options.map((option) => option.label[locale]).join(" / ") }}
-        </p>
 
         <div
           :class="[
@@ -88,7 +73,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
 import Button from "@/components/ui/Button.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import type { Product, ProductVariantGroup, StoreLocale } from "@/types/merch";
+import type { Product, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
   t: MerchCopy;
@@ -125,14 +110,14 @@ const loadMore = () => {
   );
 };
 
-const getVariantGroupLabel = (group: ProductVariantGroup) => {
-  if (group.type === "size") {
-    return props.locale === "fr" ? "Tailles" : "Sizes";
+const MAX_CARD_DESCRIPTION_LENGTH = 110;
+
+const getCardDescription = (description: string) => {
+  const trimmed = description.trim();
+  if (trimmed.length <= MAX_CARD_DESCRIPTION_LENGTH) {
+    return trimmed;
   }
-  if (group.type === "color") {
-    return props.locale === "fr" ? "Couleurs" : "Colors";
-  }
-  return group.label[props.locale];
+  return `${trimmed.slice(0, MAX_CARD_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 };
 
 const reconnectObserver = () => {

@@ -4,9 +4,15 @@
       v-if="currentImage"
       :src="currentImage"
       :alt="alt"
-      class="bg-muted/20 h-full w-full object-contain p-2"
+      :class="
+        cn(
+          'bg-muted/20 h-full w-full object-contain p-2',
+          zoomable ? 'cursor-zoom-in' : '',
+        )
+      "
       loading="lazy"
       @error="markFailed"
+      @click="openZoom"
     />
     <div v-else :class="cn('h-full w-full bg-gradient-to-br', gradientClass)" />
 
@@ -47,10 +53,52 @@
       </div>
     </template>
   </div>
+
+  <div
+    v-if="zoomOpen && currentImage"
+    class="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4"
+    @click.self="closeZoom"
+  >
+    <img
+      :src="currentImage"
+      :alt="alt"
+      class="max-h-[92vh] max-w-[92vw] object-contain"
+      loading="lazy"
+    />
+    <Button
+      variant="secondary"
+      size="icon"
+      class="absolute top-4 right-4 h-9 w-9 rounded-full"
+      :aria-label="`${id}-close-zoom`"
+      @click="closeZoom"
+    >
+      <X class="size-4" />
+    </Button>
+    <template v-if="imageCount > 1">
+      <Button
+        variant="secondary"
+        size="icon"
+        class="absolute top-1/2 left-4 h-9 w-9 -translate-y-1/2 rounded-full"
+        :aria-label="`${id}-zoom-previous-image`"
+        @click.stop.prevent="goPrevious"
+      >
+        <ChevronLeft class="size-4" />
+      </Button>
+      <Button
+        variant="secondary"
+        size="icon"
+        class="absolute top-1/2 right-4 h-9 w-9 -translate-y-1/2 rounded-full"
+        :aria-label="`${id}-zoom-next-image`"
+        @click.stop.prevent="goNext"
+      >
+        <ChevronRight class="size-4" />
+      </Button>
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, X } from "lucide-vue-next";
 import { computed, ref } from "vue";
 
 import Button from "@/components/ui/Button.vue";
@@ -62,10 +110,12 @@ const props = defineProps<{
   imageGallery?: string[];
   gradientClass: string;
   className?: string;
+  zoomable?: boolean;
 }>();
 
 const index = ref(0);
 const failed = ref<Record<string, boolean>>({});
+const zoomOpen = ref(false);
 
 const validImages = computed(() =>
   (props.imageGallery ?? []).filter((src) => !failed.value[src]),
@@ -108,5 +158,16 @@ const goNext = () => {
   }
 
   index.value = (index.value + 1) % imageCount.value;
+};
+
+const openZoom = () => {
+  if (!props.zoomable || !currentImage.value) {
+    return;
+  }
+  zoomOpen.value = true;
+};
+
+const closeZoom = () => {
+  zoomOpen.value = false;
 };
 </script>
