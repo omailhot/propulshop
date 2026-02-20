@@ -512,6 +512,9 @@ export const products: Product[] = [
     category: 'giftcard',
     price: 10,
     gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    imageGallery: [
+      '/merch/saq.png'
+    ],
     name: {
       en: 'SAQ gift card',
       fr: 'Carte-cadeau SAQ',
@@ -526,6 +529,9 @@ export const products: Product[] = [
     category: 'giftcard',
     price: 10,
     gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    imageGallery: [
+      '/merch/chocolat-favoris.png'
+    ],
     name: {
       en: 'Chocolat Favoris gift card',
       fr: 'Carte-cadeau Chocolat Favoris',
@@ -540,6 +546,9 @@ export const products: Product[] = [
     category: 'giftcard',
     price: 10,
     gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    imageGallery: [
+      '/merch/shop-santé.png'
+    ],
     name: {
       en: 'Shop Sante gift card',
       fr: 'Carte-cadeau Shop Sante',
@@ -554,6 +563,9 @@ export const products: Product[] = [
     category: 'giftcard',
     price: 15,
     gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    imageGallery: [
+      '/merch/pasta-fumo.png'
+    ],
     name: {
       en: 'Pasta Fumo gift card',
       fr: 'Carte-cadeau Pasta Fumo',
@@ -568,6 +580,9 @@ export const products: Product[] = [
     category: 'giftcard',
     price: 10,
     gradientClass: 'from-zinc-200/60 via-zinc-100/40 to-transparent',
+    imageGallery: [
+      '/merch/bureau-en-gros.png'
+    ],
     name: {
       en: 'Bureau en Gros gift card',
       fr: 'Carte-cadeau Bureau en gros',
