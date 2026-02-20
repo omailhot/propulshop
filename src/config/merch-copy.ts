@@ -342,7 +342,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		orderAuthRequired: "Veuillez vous connecter avant de passer une commande.",
 		orderSendFailed: "La commande n'a pas pu être envoyée. Veuillez réessayer.",
 		orderNoDraftStatus: "Aucune commande enregistrée pour le moment.",
-		orderPlacedStatus: "La commande a été placée le",
+		orderPlacedStatus: "Une commande a déjà été placée",
 		orderLockedStatus: "La commande est verrouillée.",
 		orderUnlockedStatus: "La commande est déverrouillée.",
 		deadlinePassed:
@@ -364,10 +364,10 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		viewMyOrder: "Voir ma commande",
 		placedPageTitle: "Commande placée",
 		placedPageBody:
-			"Votre commande est placée. Vous pouvez la déverrouiller et modifier les articles du panier jusqu'au 1 mars 2026.",
+			"Votre commande est placée. Vous pouvez la déverrouiller et modifier les articles du panier jusqu'au 1er mars 2026.",
 		overwriteOrderPrompt:
-			"Voulez-vous écraser votre commande existante ou la consulter?",
-		overwriteOrderAction: "Écraser la commande",
+			"Voulez-vous effacer votre commande existante ou la consulter?",
+		overwriteOrderAction: "Effacer la commande",
 		policy:
 			"Propulso applique d'abord 250 $ de Crédit comité social, puis le reste est payé depuis votre portefeuille personnel.",
 		viewOnlyEnable: "Activer lecture seule",
