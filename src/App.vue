@@ -53,9 +53,12 @@
           class="border-border/80 mb-4 overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_10%_15%,rgba(255,210,120,0.42),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,118,140,0.34),transparent_42%),linear-gradient(120deg,rgba(255,248,226,0.94),rgba(255,236,224,0.94))] p-5 shadow-md dark:border-amber-200/20 dark:bg-[radial-gradient(circle_at_10%_15%,rgba(255,170,70,0.2),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,90,120,0.2),transparent_42%),linear-gradient(125deg,rgba(51,30,20,0.95),rgba(45,22,18,0.95))]"
         >
           <p
-            class="mb-3 inline-flex rounded-full border border-amber-300/60 bg-amber-100/75 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase text-amber-900 dark:border-amber-300/35 dark:bg-amber-400/15 dark:text-amber-100"
+            class="mb-3 mx-auto inline-flex w-fit rounded-full border border-amber-300/60 bg-amber-100/75 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase text-amber-900 dark:border-amber-300/35 dark:bg-amber-400/15 dark:text-amber-100"
           >
-            La shop Propulso - Première édition
+            Bienvenue au Shop Propulso!
+          </p>
+          <p class="text-foreground pl-2.5 text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
+            Le comité social est fier de vous présenter le catalogue pour la première édition du Shop Propulso.
           </p>
           <p class="text-foreground pl-2.5 text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
             Pour inaugurer cette première édition, un crédit de
@@ -74,7 +77,7 @@
           </p>
         </div>
         <div
-          v-if="!sessionUser"
+          v-if="!sessionUser && !authBusy"
           class="border-border/70 mb-4 flex flex-col gap-3 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.18),rgba(255,0,53,0.14))] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-[linear-gradient(135deg,rgba(255,160,0,0.24),rgba(255,0,53,0.2))]"
         >
           <div>
@@ -320,7 +323,7 @@ const VIEW_ONLY_SESSION_KEY = "propulshop-view-only";
 const isSubmittingOrder = ref(false);
 const showOverwriteModal = ref(false);
 const lockActionBusy = ref(false);
-const authBusy = ref(false);
+const authBusy = ref(true);
 const isViewOnly = ref(false);
 const sessionUser = ref<SessionUser | null>(null);
 const isAdmin = ref(false);
@@ -1739,6 +1742,8 @@ onMounted(async () => {
     await loadCurrentUserOrder();
   } catch (error) {
     console.error(error);
+  } finally {
+    authBusy.value = false;
   }
 });
 

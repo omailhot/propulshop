@@ -249,7 +249,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 	},
 	fr: {
 		appTitle: "La shop Propulso",
-		appSubtitle: "Le comité social est fier de vous présenter le catalogue pour la première édition du Shop Propulso.",
+		appSubtitle: "",
 		landingBadge: "Boutique équipe",
 		landingTitle: "Expérience merch premium pour chaque employé",
 		landingDescription:
