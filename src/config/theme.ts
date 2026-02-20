@@ -1,4 +1,4 @@
-export const THEME_STORAGE_KEY = "propulso-theme";
+export const THEME_STORAGE_KEY = "propulshop-theme";
 
 export const THEME_BOOTSTRAP_SCRIPT = `
 (() => {

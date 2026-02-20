@@ -58,8 +58,16 @@
             </div>
 
             <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">{{ t.quantity }}</span>
-              <QuantityStepper v-model="quantity" :min="1" :max="25" />
+              <div>
+                <span class="text-sm font-medium">{{ t.quantity }}</span>
+                <p
+                  v-if="isGiftCardProduct"
+                  class="text-muted-foreground mt-1 text-xs"
+                >
+                  {{ t.giftCardQuantityLimit }}
+                </p>
+              </div>
+              <QuantityStepper v-model="quantity" :min="1" :max="maxQuantity" />
             </div>
           </div>
 
@@ -86,6 +94,7 @@ import Button from "@/components/ui/Button.vue";
 import Drawer from "@/components/ui/Drawer.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import type { MerchCopy } from "@/config/merch-copy";
+import { getMaxQuantityForProductId, isGiftCardProductId } from "@/lib/merch-quantity";
 import type { Product, ProductVariantGroup, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
@@ -126,6 +135,12 @@ watch(
 );
 
 const variantGroups = computed(() => props.product?.variantGroups ?? []);
+const maxQuantity = computed(() =>
+  props.product ? getMaxQuantityForProductId(props.product.id) : 25,
+);
+const isGiftCardProduct = computed(() =>
+  props.product ? isGiftCardProductId(props.product.id) : false,
+);
 
 const getVariantGroupLabel = (group: ProductVariantGroup) => {
   if (group.type === "size") {

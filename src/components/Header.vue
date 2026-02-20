@@ -12,7 +12,7 @@
       >
         <img
           src="/favicon.ico"
-          alt="La shop Propulso logo"
+          alt="PropulShop logo"
           class="border-border/70 bg-background size-10 shrink-0 rounded-xl border object-contain p-1 shadow-sm transition group-hover:scale-105"
         />
         <div class="min-w-0">

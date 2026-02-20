@@ -40,6 +40,12 @@
                 >
                   {{ getVariantLabels(line).join(" | ") }}
                 </p>
+                <p
+                  v-if="isGiftCardProduct(line.product.id)"
+                  class="text-muted-foreground mt-1 text-xs"
+                >
+                  {{ t.giftCardQuantityLimit }}
+                </p>
               </div>
               <p class="font-medium">
                 {{ formatCurrency.format(line.lineTotal) }}
@@ -49,6 +55,7 @@
             <div class="mt-3 flex items-center justify-between">
               <QuantityStepper
                 :model-value="line.quantity"
+                :max="getMaxQuantity(line.product.id)"
                 :disabled="readOnly"
                 @update:model-value="
                   (nextQuantity) =>
@@ -127,6 +134,7 @@ import CardTitle from "@/components/ui/CardTitle.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
+import { getMaxQuantityForProductId, isGiftCardProductId } from "@/lib/merch-quantity";
 import type { ProductVariantGroup, StoreLocale } from "@/types/merch";
 
 type CartLine = {
@@ -135,6 +143,7 @@ type CartLine = {
   lineTotal: number;
   selectedOptions: Record<string, string>;
   product: {
+    id: string;
     name: Record<StoreLocale, string>;
     variantGroups?: ProductVariantGroup[];
   };
@@ -172,6 +181,10 @@ const getVariantLabels = (line: CartLine) =>
       return `${group.label[props.locale]}: ${selectedOption.label[props.locale]}`;
     })
     .filter((value): value is string => Boolean(value));
-</script>
 
+const getMaxQuantity = (productId: string) =>
+  getMaxQuantityForProductId(productId);
+
+const isGiftCardProduct = (productId: string) => isGiftCardProductId(productId);
+</script>
 

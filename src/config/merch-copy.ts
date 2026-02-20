@@ -110,11 +110,13 @@ export type MerchCopy = {
 	totalPerPerson: string;
 	billablePerPerson: string;
 	giftCardOutOfRange: string;
+	giftCardQuantityLimit: string;
+	giftCardLimitReached: string;
 };
 
 export const merchCopy: Record<StoreLocale, MerchCopy> = {
 	en: {
-		appTitle: "La shop Propulso",
+		appTitle: "PropulShop",
 		appSubtitle: "Internal employee store",
 		landingBadge: "Modern Team Store",
 		landingTitle: "Premium merch experience for every employee",
@@ -239,9 +241,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		totalPerPerson: "Total per person",
 		billablePerPerson: "Billable",
 		giftCardOutOfRange: "Gift card amount must be between $25 and $250.",
+		giftCardQuantityLimit: "Limit: 1 per gift card",
+		giftCardLimitReached:
+			"This gift card is already in your cart. Maximum quantity is 1.",
 	},
 	fr: {
-		appTitle: "La shop Propulso",
+		appTitle: "PropulShop",
 		appSubtitle: "Boutique interne",
 		landingBadge: "Boutique équipe",
 		landingTitle: "Expérience merch premium pour chaque employé",
@@ -373,6 +378,8 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		billablePerPerson: "Facturable",
 		giftCardOutOfRange:
 			"Le montant de carte cadeau doit être entre 25 $ et 250 $.",
+		giftCardQuantityLimit: "Limite: 1 par carte cadeau",
+		giftCardLimitReached:
+			"Cette carte cadeau est deja dans votre panier. La quantite maximale est 1.",
 	},
 };
-

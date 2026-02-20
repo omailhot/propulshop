@@ -33,6 +33,7 @@
           :items-summary="adminItemsSummary"
           @refresh="loadAdminDashboard"
           @select-order="onOpenAdminOrder"
+          @delete-order="onDeleteAdminOrder"
           @toggle-view-only="toggleViewOnly"
         />
       </div>
@@ -93,6 +94,7 @@
             :t="t"
             :locale="locale"
             :products="products"
+            :cart-lines="derived.cartLines.value"
             :format-currency="formatCurrency"
             :view-only="isReadOnlyForCurrentUser"
             @open-product="actions.setActiveProductId"
@@ -289,8 +291,8 @@ const { state, derived, actions } = useMerchStore(products);
 const currentView = ref<
   "catalog" | "confirmation" | "placed" | "admin" | "admin-order"
 >("catalog");
-const VIEW_SESSION_KEY = "propulso-merch-current-view";
-const VIEW_ONLY_SESSION_KEY = "propulso-merch-view-only";
+const VIEW_SESSION_KEY = "propulshop-current-view";
+const VIEW_ONLY_SESSION_KEY = "propulshop-view-only";
 const isSubmittingOrder = ref(false);
 const showOverwriteModal = ref(false);
 const lockActionBusy = ref(false);
@@ -315,6 +317,7 @@ const adminOrders = ref<
     item_count: number;
     total_per_person: number;
     billable_per_person: number;
+    is_locked: boolean;
     created_at: string;
   }>
 >([]);
@@ -675,6 +678,8 @@ const onToggleOrderLock = async () => {
       .from("orders")
       .update({
         submitted_at: new Date().toISOString(),
+        is_locked: false,
+        locked_at: null,
         raw_payload: nextRawPayload,
       })
       .eq("id", activeOrderId.value)
@@ -816,6 +821,35 @@ const onOpenAdminOrder = async (orderId: string) => {
   currentView.value = "admin-order";
 };
 
+const onDeleteAdminOrder = async (orderId: string) => {
+  if (!isAdmin.value) {
+    return;
+  }
+
+  try {
+    const deleteOrder = await neonClient
+      .from("orders")
+      .delete()
+      .eq("id", orderId);
+    if (deleteOrder.error) {
+      throw deleteOrder.error;
+    }
+
+    if (adminSelectedOrderId.value === orderId) {
+      adminSelectedOrderId.value = null;
+      currentView.value = "admin";
+    }
+    if (activeOrderId.value === orderId) {
+      await loadCurrentUserOrder();
+    }
+    await loadAdminDashboard();
+    actions.enqueueToast("Commande supprimée avec succès.");
+  } catch (error) {
+    console.error(error);
+    actions.enqueueToast(t.value.orderSendFailed);
+  }
+};
+
 type OrderPayload = {
   requestId: string;
   submittedAt: string;
@@ -954,6 +988,8 @@ const persistCartDraft = async (
           credit_used: payload.totals.creditUsed,
           credit_remaining: payload.totals.creditRemaining,
           wallet_to_pay: payload.totals.walletToPay,
+          is_locked: confirmSelection,
+          locked_at: confirmedAt,
           raw_payload: persistedPayload,
         })
         .select("id")
@@ -978,6 +1014,8 @@ const persistCartDraft = async (
           credit_used: payload.totals.creditUsed,
           credit_remaining: payload.totals.creditRemaining,
           wallet_to_pay: payload.totals.walletToPay,
+          is_locked: confirmSelection,
+          locked_at: confirmedAt,
           raw_payload: persistedPayload,
         })
         .eq("id", orderId)
@@ -1236,7 +1274,7 @@ const loadCurrentUserOrder = async () => {
 
   const orderResult = await neonClient
     .from("orders")
-    .select("id,raw_payload")
+    .select("id,raw_payload,is_locked,locked_at")
     .eq("user_id", sessionUser.value.id)
     .limit(1);
 
@@ -1244,7 +1282,10 @@ const loadCurrentUserOrder = async () => {
     throw orderResult.error;
   }
 
-  const order = (orderResult.data?.[0] as { id: string } | undefined) ?? null;
+  const order =
+    (orderResult.data?.[0] as
+      | { id: string; is_locked: boolean; locked_at: string | null }
+      | undefined) ?? null;
 
   if (!order) {
     activeOrderId.value = null;
@@ -1264,7 +1305,7 @@ const loadCurrentUserOrder = async () => {
   }
 
   activeOrderId.value = order.id;
-  activeOrderLocked.value = false;
+  activeOrderLocked.value = order.is_locked;
   activeOrderPlacedAt.value = null;
   const rawPayload = (
     orderResult.data?.[0] as { raw_payload?: unknown } | undefined
@@ -1275,7 +1316,9 @@ const loadCurrentUserOrder = async () => {
     activeOrderConfirmedAt.value =
       typeof confirmedAt === "string" && confirmedAt.length > 0
         ? confirmedAt
-        : null;
+        : order.is_locked
+          ? order.locked_at
+          : null;
     const payloadItems = (rawPayload as Record<string, unknown>).items;
     if (Array.isArray(payloadItems)) {
       for (const item of payloadItems) {
@@ -1474,7 +1517,7 @@ const loadAdminDashboard = async () => {
 
     const ordersResult = await neonClient
       .from("orders")
-      .select("id,user_id,user_email,item_count,subtotal,created_at")
+      .select("id,user_id,user_email,item_count,subtotal,is_locked,created_at")
       .order("created_at", { ascending: false });
     if (ordersResult.error) {
       if (isPermissionDeniedError(ordersResult.error, "orders")) {
@@ -1510,6 +1553,7 @@ const loadAdminDashboard = async () => {
         user_email: string | null;
         item_count: number;
         subtotal: string | number;
+        is_locked: boolean;
         created_at: string;
       }>
     ).map((order) => {
@@ -1527,6 +1571,7 @@ const loadAdminDashboard = async () => {
         item_count: order.item_count,
         total_per_person: billing.total,
         billable_per_person: billing.billable,
+        is_locked: order.is_locked,
         created_at: order.created_at,
       };
     });

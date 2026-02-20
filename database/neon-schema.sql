@@ -20,6 +20,15 @@ alter table orders add column if not exists locked_at timestamptz;
 alter table orders add column if not exists lock_deadline_at timestamptz not null default '2026-03-01T23:59:59Z'::timestamptz;
 alter table orders add column if not exists placed_at timestamptz;
 
+-- Backfill lock status for existing rows created before `is_locked` was added.
+update orders
+set is_locked = nullif(raw_payload->>'confirmedAt', '') is not null
+where raw_payload ? 'confirmedAt';
+
+update orders
+set locked_at = coalesce(locked_at, submitted_at)
+where is_locked and locked_at is null;
+
 create table if not exists order_items (
   id uuid primary key,
   order_id uuid not null references orders(id) on delete cascade,

@@ -7,9 +7,10 @@ import {
 	normalizeSelectedOptions,
 	resolveOrderProductSelection,
 } from "@/lib/merch-order";
+import { getMaxQuantityForProductId } from "@/lib/merch-quantity";
 import type { CartItem, Category, Product } from "@/types/merch";
 
-const CART_SESSION_KEY = "propulso-merch-cart";
+const CART_SESSION_KEY = "propulshop-cart";
 
 export function useMerchStore(products: Product[]) {
 	const activeCategory = ref<"all" | Category>("all");
@@ -53,7 +54,13 @@ export function useMerchStore(products: Product[]) {
 						normalizeSelectedOptions(item.selectedOptions ?? {}),
 					),
 					productId: item.productId,
-					quantity: Math.max(1, Math.min(Number(item.quantity ?? 1), 25)),
+					quantity: Math.max(
+						1,
+						Math.min(
+							Number(item.quantity ?? 1),
+							getMaxQuantityForProductId(item.productId),
+						),
+					),
 					selectedOptions:
 						item.selectedOptions && typeof item.selectedOptions === "object"
 							? normalizeSelectedOptions(item.selectedOptions)
@@ -141,7 +148,8 @@ export function useMerchStore(products: Product[]) {
 		quantity = 1,
 	) => {
 		const normalizedOptions = normalizeSelectedOptions(selectedOptions);
-		const normalizedQuantity = Math.max(1, Math.min(quantity, 25));
+		const maxQuantity = getMaxQuantityForProductId(productId);
+		const normalizedQuantity = Math.max(1, Math.min(quantity, maxQuantity));
 		const cartItemId = buildCartItemId(productId, normalizedOptions);
 
 		const existingIndex = cartItems.value.findIndex(
@@ -164,7 +172,10 @@ export function useMerchStore(products: Product[]) {
 		const next = [...cartItems.value];
 		next[existingIndex] = {
 			...next[existingIndex],
-			quantity: Math.min(25, next[existingIndex].quantity + normalizedQuantity),
+			quantity: Math.min(
+				maxQuantity,
+				next[existingIndex].quantity + normalizedQuantity,
+			),
 		};
 		cartItems.value = next;
 	};
@@ -174,7 +185,14 @@ export function useMerchStore(products: Product[]) {
 	};
 
 	const updateCartItemQuantity = (cartItemId: string, nextQuantity: number) => {
-		const quantity = Math.max(0, Math.min(nextQuantity, 25));
+		const source = cartItems.value.find((item) => item.id === cartItemId);
+		if (!source) {
+			return;
+		}
+		const quantity = Math.max(
+			0,
+			Math.min(nextQuantity, getMaxQuantityForProductId(source.productId)),
+		);
 		if (quantity === 0) {
 			removeCartItem(cartItemId);
 			return;
@@ -215,7 +233,10 @@ export function useMerchStore(products: Product[]) {
 				.filter((item) => item.id !== cartItemId && item.id !== nextId)
 				.concat({
 					...target,
-					quantity: Math.min(25, target.quantity + source.quantity),
+					quantity: Math.min(
+						getMaxQuantityForProductId(source.productId),
+						target.quantity + source.quantity,
+					),
 					selectedOptions: normalizedOptions,
 					selectedOptionLabels: undefined,
 				});
@@ -259,7 +280,10 @@ export function useMerchStore(products: Product[]) {
 			.map((item) => ({
 				id: buildCartItemId(item.productId, item.selectedOptions),
 				productId: item.productId,
-				quantity: Math.max(1, Math.min(item.quantity, 25)),
+				quantity: Math.max(
+					1,
+					Math.min(item.quantity, getMaxQuantityForProductId(item.productId)),
+				),
 				selectedOptions: normalizeSelectedOptions(item.selectedOptions),
 				selectedOptionLabels: item.selectedOptionLabels,
 			}))

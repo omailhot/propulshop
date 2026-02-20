@@ -24,6 +24,12 @@
             <p class="text-muted-foreground mt-1 text-sm">
               {{ getCardDescription(product.description[locale]) }}
             </p>
+            <p
+              v-if="isGiftCardProduct(product.id)"
+              class="text-muted-foreground/85 mt-1 text-[11px] font-medium"
+            >
+              {{ t.giftCardQuantityLimit }}
+            </p>
           </div>
           <div class="text-right">
             <p class="font-semibold">
@@ -45,7 +51,37 @@
           >
             {{ t.viewDetails }}
           </Button>
-          <Button v-if="!viewOnly" @click.stop="$emit('quick-add', product.id)">
+          <TooltipProvider v-if="!viewOnly && isGiftCardLimitReached(product.id)">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <span class="inline-flex w-full" @click.stop>
+                  <Button
+                    class="w-full"
+                    disabled
+                    @click.stop
+                  >
+                    <ShoppingCart class="size-4" />
+                    {{
+                      (product.variantGroups ?? []).length > 0
+                        ? t.selectVariant
+                        : t.quickAdd
+                    }}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                :side-offset="8"
+                class="z-[90] max-w-80 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm leading-relaxed font-semibold text-zinc-50 shadow-xl"
+              >
+                {{ t.giftCardLimitReached }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button
+            v-else-if="!viewOnly"
+            @click.stop="$emit('quick-add', product.id)"
+          >
             <ShoppingCart class="size-4" />
             {{
               (product.variantGroups ?? []).length > 0
@@ -72,13 +108,26 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
 import Button from "@/components/ui/Button.vue";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { MerchCopy } from "@/config/merch-copy";
+import { getMaxQuantityForProductId, isGiftCardProductId } from "@/lib/merch-quantity";
 import type { Product, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
   t: MerchCopy;
   locale: StoreLocale;
   products: Product[];
+  cartLines: Array<{
+    quantity: number;
+    product: {
+      id: string;
+    };
+  }>;
   formatCurrency: Intl.NumberFormat;
   viewOnly?: boolean;
 }>();
@@ -119,6 +168,15 @@ const getCardDescription = (description: string) => {
   }
   return `${trimmed.slice(0, MAX_CARD_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 };
+
+const isGiftCardProduct = (productId: string) => isGiftCardProductId(productId);
+const productQuantityInCart = (productId: string) =>
+  props.cartLines
+    .filter((line) => line.product.id === productId)
+    .reduce((total, line) => total + line.quantity, 0);
+const isGiftCardLimitReached = (productId: string) =>
+  isGiftCardProduct(productId) &&
+  productQuantityInCart(productId) >= getMaxQuantityForProductId(productId);
 
 const reconnectObserver = () => {
   observer?.disconnect();
