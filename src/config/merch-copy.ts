@@ -117,7 +117,7 @@ export type MerchCopy = {
 
 export const merchCopy: Record<StoreLocale, MerchCopy> = {
 	en: {
-		appTitle: "PropulShop",
+		appTitle: "Shop Propulso",
 		appSubtitle: "Internal employee store",
 		landingBadge: "Modern Team Store",
 		landingTitle: "Premium merch experience for every employee",
