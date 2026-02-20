@@ -57,7 +57,7 @@
           >
             La shop Propulso - Première édition
           </p>
-          <p class="text-foreground text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
+          <p class="text-foreground pl-2.5 text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
             Pour inaugurer cette première édition, un crédit de
             <span class="font-semibold">250 $ par employé</span> est offert,
             utilisable pour cette édition seulement. Les prix affichés comprennent les taxes.
