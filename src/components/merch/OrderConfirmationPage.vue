@@ -118,6 +118,7 @@
         <CardHeader>
           <CardTitle>{{ t.confirmationTitle }}</CardTitle>
           <CardDescription>{{ t.confirmationSubtitle }}</CardDescription>
+          <CardDescription>{{ t.confirmationText }}</CardDescription>
         </CardHeader>
 
         <CardContent class="space-y-4">

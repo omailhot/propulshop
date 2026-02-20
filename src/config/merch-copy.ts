@@ -71,6 +71,7 @@ export type MerchCopy = {
 	itemsToOrder: string;
 	confirmationTitle: string;
 	confirmationSubtitle: string;
+	confirmationText: string;
 	invoiceLater: string;
 	invoiceExplanation: string;
 	backToCatalog: string;
@@ -327,12 +328,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		reviewTitle: "Révision de commande",
 		reviewSubtitle:
 			"Vérifiez les articles et les quantités avant confirmation.",
-		itemsToOrder: "Tout ce qui sera commandé",
-		confirmationTitle: "Confirmation",
+		itemsToOrder: "Mon panier",
+		confirmationTitle: "Confirmation de la commande",
 		confirmationSubtitle: "Résumé avant validation finale.",
+		confirmationText: "Verouiller votre panier pour confirmer votre commande. Vous pouvez à tout moment, avant la date limite, dé-vérouiller votre commande pour la modifier. Seuls les articles d'une commande verouillée seront considérés dans la commande finale.",
 		invoiceLater: "Montant facturé plus tard",
-		invoiceExplanation:
-			"Tout montant au-delà du Crédit comité social vous sera facturé après approbation interne.",
+		invoiceExplanation: "Tout montant au-delà du Crédit comité social vous sera facturé après approbation interne.",
 		backToCatalog: "Retour au catalogue",
 		placeOrder: "Confirmer la sélection",
 		reopenOrder: "La commande a été réouverte.",
