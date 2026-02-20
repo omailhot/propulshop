@@ -54,52 +54,54 @@
     </template>
   </div>
 
-  <div
-    v-if="zoomOpen && currentImage"
-    class="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4"
-    @click.self="closeZoom"
-  >
-    <img
-      :src="currentImage"
-      :alt="alt"
-      class="max-h-[92vh] max-w-[92vw] object-contain"
-      loading="lazy"
-    />
-    <Button
-      variant="secondary"
-      size="icon"
-      class="absolute top-4 right-4 h-9 w-9 rounded-full"
-      :aria-label="`${id}-close-zoom`"
-      @click="closeZoom"
+  <Teleport to="body">
+    <div
+      v-if="zoomOpen && currentImage"
+      class="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4"
+      @click.self="closeZoom"
     >
-      <X class="size-4" />
-    </Button>
-    <template v-if="imageCount > 1">
+      <img
+        :src="currentImage"
+        :alt="alt"
+        class="max-h-[92vh] max-w-[92vw] object-contain"
+        loading="lazy"
+      />
       <Button
         variant="secondary"
         size="icon"
-        class="absolute top-1/2 left-4 h-9 w-9 -translate-y-1/2 rounded-full"
-        :aria-label="`${id}-zoom-previous-image`"
-        @click.stop.prevent="goPrevious"
+        class="absolute top-4 right-4 h-9 w-9 rounded-full"
+        :aria-label="`${id}-close-zoom`"
+        @click="closeZoom"
       >
-        <ChevronLeft class="size-4" />
+        <X class="size-4" />
       </Button>
-      <Button
-        variant="secondary"
-        size="icon"
-        class="absolute top-1/2 right-4 h-9 w-9 -translate-y-1/2 rounded-full"
-        :aria-label="`${id}-zoom-next-image`"
-        @click.stop.prevent="goNext"
-      >
-        <ChevronRight class="size-4" />
-      </Button>
-    </template>
-  </div>
+      <template v-if="imageCount > 1">
+        <Button
+          variant="secondary"
+          size="icon"
+          class="absolute top-1/2 left-4 h-9 w-9 -translate-y-1/2 rounded-full"
+          :aria-label="`${id}-zoom-previous-image`"
+          @click.stop.prevent="goPrevious"
+        >
+          <ChevronLeft class="size-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          class="absolute top-1/2 right-4 h-9 w-9 -translate-y-1/2 rounded-full"
+          :aria-label="`${id}-zoom-next-image`"
+          @click.stop.prevent="goNext"
+        >
+          <ChevronRight class="size-4" />
+        </Button>
+      </template>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, X } from "lucide-vue-next";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 import Button from "@/components/ui/Button.vue";
 import { cn } from "@/lib/utils";
@@ -170,4 +172,11 @@ const openZoom = () => {
 const closeZoom = () => {
   zoomOpen.value = false;
 };
+
+watch(
+  () => (props.imageGallery ?? []).join("|"),
+  () => {
+    index.value = 0;
+  },
+);
 </script>

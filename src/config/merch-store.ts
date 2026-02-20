@@ -171,7 +171,7 @@ export const products: Product[] = [
     ],
     name: {
       en: 'Veste sans manche Homme',
-      fr: 'Veste sans manche Homme',
+      fr: 'Veste matelassée sans manche Homme',
     },
     description: {
       en: 'Layer-ready top for hybrid work and travel.',

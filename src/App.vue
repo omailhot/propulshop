@@ -50,17 +50,28 @@
           </p>
         </div>
         <div
-          class="border-border/70 mb-4 flex flex-col gap-3 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.18),rgba(255,0,53,0.14))] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-[linear-gradient(135deg,rgba(255,160,0,0.24),rgba(255,0,53,0.2))]"
+          class="border-border/80 mb-4 overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_10%_15%,rgba(255,210,120,0.42),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,118,140,0.34),transparent_42%),linear-gradient(120deg,rgba(255,248,226,0.94),rgba(255,236,224,0.94))] p-5 shadow-md dark:border-amber-200/20 dark:bg-[radial-gradient(circle_at_10%_15%,rgba(255,170,70,0.2),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,90,120,0.2),transparent_42%),linear-gradient(125deg,rgba(51,30,20,0.95),rgba(45,22,18,0.95))]"
         >
-          <div>
-            <p class="text-foreground">
-              Pour inaugurer cette première édition, un crédit est offert pour chaque employé au montant de 250$ par personne, utilisable pour cette édition seulement. Les prix de tous les produits incluent déjà les taxes.
-            </p>
-            <br>
-            <p class="text-foreground">
-              <b>La date maximale pour commander est le 1er mars 2026.</b> Si le crédit n’est pas utilisé en entièreté avant la cette date, ce crédit est perdu et non transférable à la prochaine édition, non monnayable, non remboursable.
-            </p>
-          </div>
+          <p
+            class="mb-3 inline-flex rounded-full border border-amber-300/60 bg-amber-100/75 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase text-amber-900 dark:border-amber-300/35 dark:bg-amber-400/15 dark:text-amber-100"
+          >
+            La shop Propulso - Première édition
+          </p>
+          <p class="text-foreground text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
+            Pour inaugurer cette première édition, un crédit de
+            <span class="font-semibold">250 $ par employé</span> est offert,
+            utilisable pour cette édition seulement. Les prix affichés comprennent les taxes.
+          </p>
+          <p
+            class="mt-3 rounded-xl border border-red-200/70 bg-white/65 px-3 py-2 text-sm leading-relaxed text-red-950 dark:border-red-300/35 dark:bg-black/25 dark:text-red-100"
+          >
+            <span class="font-semibold"
+              >Date maximale de commande: 1 mars 2026.</span
+            >
+            Si le crédit n'est pas utilisé en entier avant cette date, il est
+            perdu et non transférable à la prochaine édition, non monnayable et
+            non remboursable.
+          </p>
         </div>
         <div
           v-if="!sessionUser"

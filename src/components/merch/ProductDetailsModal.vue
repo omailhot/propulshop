@@ -14,7 +14,7 @@
         <ProductImageCarousel
           :id="product.id"
           :alt="product.name[locale]"
-          :image-gallery="product.imageGallery"
+          :image-gallery="variantImageGallery"
           :gradient-class="product.gradientClass"
           :zoomable="true"
           class-name="h-[22rem] border md:h-[30rem]"
@@ -141,6 +141,51 @@ const maxQuantity = computed(() =>
 const isGiftCardProduct = computed(() =>
   props.product ? isGiftCardProductId(props.product.id) : false,
 );
+const variantImageGallery = computed(() => {
+  if (!props.product?.imageGallery?.length) {
+    return props.product?.imageGallery;
+  }
+
+  const selectedGroups = (props.product.variantGroups ?? [])
+    .map((group) => {
+      const selected = selections.value[group.id];
+      if (!selected) {
+        return null;
+      }
+      return { groupId: group.id.toLowerCase(), selected: selected.toLowerCase() };
+    })
+    .filter((value): value is { groupId: string; selected: string } => Boolean(value));
+  if (selectedGroups.length === 0) {
+    return props.product.imageGallery;
+  }
+
+  const matches = props.product.imageGallery.filter((image) =>
+    selectedGroups.every(({ groupId, selected }) => {
+      const normalized = image.toLowerCase();
+      if (groupId.includes("color")) {
+        return normalized.includes(selected);
+      }
+      if (groupId.includes("image")) {
+        if (selected === "logo") {
+          return normalized.includes("logo") || normalized.includes("_1.");
+        }
+        if (selected === "rocket") {
+          return normalized.includes("rocket") || normalized.includes("_2.");
+        }
+        return normalized.includes(selected);
+      }
+      return true;
+    }),
+  );
+  if (matches.length === 0 || matches.length === props.product.imageGallery.length) {
+    return props.product.imageGallery;
+  }
+
+  return [
+    ...matches,
+    ...props.product.imageGallery.filter((image) => !matches.includes(image)),
+  ];
+});
 
 const getVariantGroupLabel = (group: ProductVariantGroup) => {
   if (group.type === "size") {

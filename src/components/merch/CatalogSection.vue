@@ -19,7 +19,7 @@
         />
 
         <div class="flex items-start justify-between gap-3">
-          <div>
+          <div class="min-w-0 max-w-[80%]">
             <h3 class="font-semibold">{{ product.name[locale] }}</h3>
             <p class="text-muted-foreground mt-1 text-sm">
               {{ getCardDescription(product.description[locale]) }}
@@ -35,7 +35,7 @@
             <p class="font-semibold">
               {{ formatCurrency.format(product.price) }}
             </p>
-            <p class="text-muted-foreground text-xs">{{ t.perItem }}</p>
+            <p class="text-muted-foreground text-xs whitespace-nowrap">{{ t.perItem }}</p>
           </div>
         </div>
 
