@@ -212,8 +212,16 @@
     @click.self="onCancelOverwriteModal"
   >
     <div
-      class="border-border/70 bg-background w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+      class="border-border/70 bg-background relative w-full max-w-md rounded-2xl border p-6 shadow-2xl"
     >
+      <button
+        type="button"
+        class="text-muted-foreground hover:text-foreground absolute top-3 right-3 rounded-md p-1 transition-colors"
+        aria-label="Fermer"
+        @click="onCancelOverwriteModal"
+      >
+        <X class="size-4" />
+      </button>
       <h3 class="text-lg font-semibold">{{ t.orderPlacedStatus }}</h3>
       <p class="text-muted-foreground mt-2 text-sm">
         {{ t.existingOrderBannerTitle }}
@@ -270,7 +278,7 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingBasket } from "lucide-vue-next";
+import { ShoppingBasket, X } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import Header from "@/components/Header.vue";
