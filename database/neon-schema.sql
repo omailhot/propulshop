@@ -56,6 +56,45 @@ create table if not exists admin_users (
   created_at timestamptz not null default now()
 );
 
+create table if not exists app_settings (
+  setting_key text primary key,
+  value_json jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table app_settings add column if not exists setting_key text;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'app_settings'
+      and column_name = 'key'
+  ) then
+    execute 'update app_settings set setting_key = key where setting_key is null';
+
+    begin
+      alter table app_settings drop constraint if exists app_settings_pkey;
+    exception when undefined_object then
+      null;
+    end;
+
+    begin
+      alter table app_settings drop column key;
+    exception when undefined_column then
+      null;
+    end;
+  end if;
+end $$;
+update app_settings
+set setting_key = 'global_readonly_mode'
+where setting_key is null
+  and value_json ? 'enabled';
+alter table app_settings alter column setting_key set not null;
+alter table app_settings drop constraint if exists app_settings_pkey;
+alter table app_settings add constraint app_settings_pkey primary key (setting_key);
+
 create index if not exists idx_orders_created_at on orders(created_at desc);
 create index if not exists idx_orders_user_id on orders(user_id);
 create unique index if not exists idx_orders_user_id_unique on orders(user_id);
@@ -75,6 +114,9 @@ grant select, insert, update on app_users to authenticated;
 grant select, insert, update on app_users to anonymous;
 grant select on admin_users to authenticated;
 grant select on admin_users to anonymous;
+grant select on app_settings to authenticated;
+grant select on app_settings to anonymous;
+grant insert, update on app_settings to authenticated;
 
 alter default privileges in schema public
   grant select, insert, update, delete on tables to authenticated;
@@ -85,6 +127,7 @@ alter table orders enable row level security;
 alter table order_items enable row level security;
 alter table app_users enable row level security;
 alter table admin_users enable row level security;
+alter table app_settings enable row level security;
 
 drop policy if exists orders_select_own on orders;
 create policy orders_select_own
@@ -262,3 +305,31 @@ create policy admin_users_select
   for select
   to authenticated
   using (user_id = auth.user_id());
+
+drop policy if exists app_settings_select_all on app_settings;
+create policy app_settings_select_all
+  on app_settings
+  for select
+  to authenticated, anonymous
+  using (true);
+
+drop policy if exists app_settings_insert_admin on app_settings;
+create policy app_settings_insert_admin
+  on app_settings
+  for insert
+  to authenticated
+  with check (
+    exists (select 1 from admin_users a where a.user_id = auth.user_id())
+  );
+
+drop policy if exists app_settings_update_admin on app_settings;
+create policy app_settings_update_admin
+  on app_settings
+  for update
+  to authenticated
+  using (
+    exists (select 1 from admin_users a where a.user_id = auth.user_id())
+  )
+  with check (
+    exists (select 1 from admin_users a where a.user_id = auth.user_id())
+  );

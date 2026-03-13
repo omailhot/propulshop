@@ -325,7 +325,7 @@ const currentView = ref<
   "catalog" | "confirmation" | "placed" | "admin" | "admin-order"
 >("catalog");
 const VIEW_SESSION_KEY = "propulshop-current-view";
-const VIEW_ONLY_SESSION_KEY = "propulshop-view-only";
+const GLOBAL_VIEW_ONLY_SETTING_KEY = "global_readonly_mode";
 const isSubmittingOrder = ref(false);
 const showOverwriteModal = ref(false);
 const lockActionBusy = ref(false);
@@ -374,6 +374,7 @@ const isPersistingDraft = ref(false);
 const pendingCartAction = ref<null | (() => void)>(null);
 const adminSelectedOrderId = ref<string | null>(null);
 let adminRefreshTimer: number | null = null;
+let viewOnlyRefreshTimer: number | null = null;
 const placedOrderPreview = ref<{
   cartLines: Array<{
     id: string;
@@ -494,7 +495,7 @@ const toggleViewOnly = () => {
   if (!isAdmin.value) {
     return;
   }
-  isViewOnly.value = !isViewOnly.value;
+  void persistGlobalViewOnlySetting(!isViewOnly.value);
 };
 
 const onQuickAdd = (productId: string) => {
@@ -1186,6 +1187,106 @@ const warnPolicyRecursionOnce = (tableName: string) => {
   );
 };
 
+const parseViewOnlySetting = (value: unknown) => {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const casted = value as Record<string, unknown>;
+  return casted.enabled === true;
+};
+
+const loadGlobalViewOnlySetting = async () => {
+  const result = await neonClient
+    .from("app_settings")
+    .select("value_json")
+    .eq("setting_key", GLOBAL_VIEW_ONLY_SETTING_KEY)
+    .maybeSingle();
+
+  if (result.error) {
+    if (isMissingTableError(result.error, "app_settings")) {
+      warnMissingTableOnce("app_settings");
+      isViewOnly.value = false;
+      return false;
+    }
+    if (isPermissionDeniedError(result.error, "app_settings")) {
+      console.warn("Permission base de données manquante pour app_settings.");
+      return isViewOnly.value;
+    }
+    throw result.error;
+  }
+
+  isViewOnly.value = parseViewOnlySetting(
+    (result.data as { value_json?: unknown } | null)?.value_json,
+  );
+  return isViewOnly.value;
+};
+
+const persistGlobalViewOnlySetting = async (nextValue: boolean) => {
+  if (!isAdmin.value) {
+    return;
+  }
+
+  const payload = {
+    setting_key: GLOBAL_VIEW_ONLY_SETTING_KEY,
+    value_json: { enabled: nextValue },
+    updated_at: new Date().toISOString(),
+  };
+
+  const updateResult = await neonClient
+    .from("app_settings")
+    .update({
+      value_json: payload.value_json,
+      updated_at: payload.updated_at,
+    })
+    .eq("setting_key", GLOBAL_VIEW_ONLY_SETTING_KEY)
+    .select("setting_key")
+    .maybeSingle();
+
+  if (updateResult.error) {
+    if (isMissingTableError(updateResult.error, "app_settings")) {
+      warnMissingTableOnce("app_settings");
+      actions.enqueueToast(
+        "La table app_settings est manquante. Exécutez database/neon-schema.sql.",
+      );
+      return;
+    }
+    if (isPermissionDeniedError(updateResult.error, "app_settings")) {
+      actions.enqueueToast(
+        "Permission base de données manquante pour app_settings.",
+      );
+      return;
+    }
+    console.error(updateResult.error);
+    actions.enqueueToast(t.value.orderSendFailed);
+    return;
+  }
+
+  if (!updateResult.data) {
+    const insertResult = await neonClient.from("app_settings").insert(payload);
+    if (insertResult.error) {
+      if (isMissingTableError(insertResult.error, "app_settings")) {
+        warnMissingTableOnce("app_settings");
+        actions.enqueueToast(
+          "La table app_settings est manquante. Exécutez database/neon-schema.sql.",
+        );
+        return;
+      }
+      if (isPermissionDeniedError(insertResult.error, "app_settings")) {
+        actions.enqueueToast(
+          "Permission base de données manquante pour app_settings.",
+        );
+        return;
+      }
+      console.error(insertResult.error);
+      actions.enqueueToast(t.value.orderSendFailed);
+      return;
+    }
+  }
+
+  isViewOnly.value = nextValue;
+};
+
 const getDisplayNameFromEmail = (email: string | null, fallbackId: string) => {
   if (!email) {
     return fallbackId.slice(0, 8);
@@ -1741,8 +1842,6 @@ onMounted(async () => {
     ) {
       currentView.value = savedView;
     }
-    isViewOnly.value =
-      window.sessionStorage.getItem(VIEW_ONLY_SESSION_KEY) === "1";
   }
 
   if (window.location.hostname === "127.0.0.1") {
@@ -1753,6 +1852,7 @@ onMounted(async () => {
   }
 
   try {
+    await loadGlobalViewOnlySetting();
     await refreshSession();
     if (
       (currentView.value === "admin" || currentView.value === "admin-order") &&
@@ -1777,13 +1877,6 @@ watch(currentView, (nextView) => {
   window.sessionStorage.setItem(VIEW_SESSION_KEY, persistedView);
 });
 
-watch(isViewOnly, (nextValue) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.setItem(VIEW_ONLY_SESSION_KEY, nextValue ? "1" : "0");
-});
-
 watch(
   () => [currentView.value, isAdmin.value] as const,
   async ([view, admin]) => {
@@ -1804,10 +1897,34 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => sessionUser.value?.id ?? null,
+  async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (viewOnlyRefreshTimer) {
+      window.clearInterval(viewOnlyRefreshTimer);
+      viewOnlyRefreshTimer = null;
+    }
+
+    await loadGlobalViewOnlySetting();
+    viewOnlyRefreshTimer = window.setInterval(() => {
+      void loadGlobalViewOnlySetting();
+    }, 30000);
+  },
+  { immediate: true },
+);
+
 onUnmounted(() => {
   if (adminRefreshTimer) {
     window.clearInterval(adminRefreshTimer);
     adminRefreshTimer = null;
+  }
+  if (viewOnlyRefreshTimer) {
+    window.clearInterval(viewOnlyRefreshTimer);
+    viewOnlyRefreshTimer = null;
   }
 });
 </script>
