@@ -80,13 +80,25 @@
         >
           <div>
             <p class="text-foreground font-semibold">
-              {{ t.loggedOutBannerTitle }}
+              {{
+                isReadOnlyForCurrentUser
+                  ? t.viewOnlyBannerTitle
+                  : t.loggedOutBannerTitle
+              }}
             </p>
             <p class="text-foreground/85 dark:text-foreground/80 text-sm">
-              {{ t.loggedOutBannerBody }}
+              {{
+                isReadOnlyForCurrentUser
+                  ? t.viewOnlyBannerBody
+                  : t.loggedOutBannerBody
+              }}
             </p>
           </div>
-          <Button class="shrink-0" @click="onConnectGoogle">
+          <Button
+            v-if="!isReadOnlyForCurrentUser"
+            class="shrink-0"
+            @click="onConnectGoogle"
+          >
             {{ t.connectGoogle }}
           </Button>
         </div>
@@ -326,6 +338,7 @@ const currentView = ref<
 >("catalog");
 const VIEW_SESSION_KEY = "propulshop-current-view";
 const GLOBAL_VIEW_ONLY_SETTING_KEY = "global_readonly_mode";
+const VIEW_ONLY_CACHE_KEY = "propulshop-global-view-only";
 const isSubmittingOrder = ref(false);
 const showOverwriteModal = ref(false);
 const lockActionBusy = ref(false);
@@ -1842,6 +1855,8 @@ onMounted(async () => {
     ) {
       currentView.value = savedView;
     }
+
+    isViewOnly.value = window.localStorage.getItem(VIEW_ONLY_CACHE_KEY) === "1";
   }
 
   if (window.location.hostname === "127.0.0.1") {
@@ -1875,6 +1890,14 @@ watch(currentView, (nextView) => {
 
   const persistedView = nextView === "admin-order" ? "admin" : nextView;
   window.sessionStorage.setItem(VIEW_SESSION_KEY, persistedView);
+});
+
+watch(isViewOnly, (nextValue) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(VIEW_ONLY_CACHE_KEY, nextValue ? "1" : "0");
 });
 
 watch(
