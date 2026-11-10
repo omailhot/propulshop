@@ -439,7 +439,7 @@ export const products: Product[] = [
     },
     description: {
       en: '',
-      fr: 'Tuque à pom-pom deux couleurs. 100 % acrylique.',
+      fr: 'Tuque à pom-pom deux couleurs. 100 % acrylique',
     },
   },
   {
