@@ -1,104 +1,104 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin "tailwindcss-animate";
 
+/*
+ * La charte 2026 revient à la lumière: l'interface est en thème clair
+ * seulement. La variante `dark` reste déclarée pour que les primitives
+ * shadcn compilent, mais la classe `.dark` n'est jamais posée.
+ */
 @custom-variant dark (&:is(.dark *));
 
-body {
-  @apply m-0;
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background);
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: 'Poppins', sans-serif;
-  letter-spacing: -0.02em;
-}
-
-h1 {
-  font-size: 1.65rem;
-}
+/* ==========================================================================
+   Jetons de marque Propulso
+   Source: Livre de marque, édition 1 (novembre 2026).
+   Trois étages: palette (ce que dit le livre), neutres dérivés (ce que le
+   livre ne fixe pas encore), sémantique (ce que les composants consomment).
+   Un composant ne lit jamais la palette directement: il lit la sémantique.
+   ========================================================================== */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: #ffa000;
-  --primary-foreground: #2f1b00;
-  --secondary: #fff1d8;
-  --secondary-foreground: #5c2200;
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: #ffe3b8;
-  --accent-foreground: #4a1b00;
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: #ffd39f;
-  --input: #ffd39f;
-  --ring: #ff4b00;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.871 0.006 286.286);
-}
+  /* 1. Palette: les six couleurs du livre, plus l'encre du texte. */
+  --p-grege: #f4eee6; /* le fond. Ni beige, ni froid. */
+  --p-orange: #f0752b; /* décoratif: jamais du texte, jamais sous du texte. */
+  --p-braise: #c23e1d; /* la couleur de marque: logo, bouton d'action. */
+  --p-ocre: #b44e14; /* surtitres, liens, avertissements. */
+  --p-bordeaux: #7a1c1c; /* profondeur, autorité. */
+  --p-vert: #14532d; /* la donnée positive. Jamais une couleur de marque. */
+  --p-encre: #26201a; /* texte courant: 13,97 sur grège. */
 
-.dark {
-  --background: #121212;
-  --foreground: oklch(0.985 0 0);
-  --card: #1b1b1b;
-  --card-foreground: oklch(0.985 0 0);
-  --popover: #1b1b1b;
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #ffa000;
-  --primary-foreground: #2f1b00;
-  --secondary: #2a1d12;
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: #3a220c;
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: #3a2b20;
-  --input: #3a2b20;
-  --ring: #ff4b00;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.274 0.006 286.033);
-  --sidebar-ring: oklch(0.442 0.017 285.786);
+  /* 2. Neutres et teintes dérivés (à confirmer dans le « Système de marque »). */
+  --p-blanc: #ffffff; /* surface de carte */
+  --p-encre-2: #5c5248; /* texte secondaire: 6,61 sur grège, 7,62 sur blanc */
+  --p-encre-3: #75695b; /* métadonnée: 4,64 sur grège */
+  --p-grege-2: #efe7dc; /* surface en retrait, survol */
+  --p-filet: #dfd4c4; /* bordure fine */
+  --p-filet-fort: #cdbfad; /* bordure de champ et de bouton contour */
+  --p-braise-fonce: #a9341a; /* survol du bouton plein: blanc à 6,6 */
+  --p-braise-pale: #f9ece5;
+  --p-ocre-pale: #f8ebdd;
+  --p-bordeaux-pale: #f3e3e1;
+  --p-vert-pale: #e4ede6;
+
+  /* Le dégradé signature: bordeaux, braise, orange, sans césure. */
+  --p-degrade: linear-gradient(
+    90deg,
+    var(--p-bordeaux) 0%,
+    var(--p-braise) 48%,
+    var(--p-orange) 100%
+  );
+
+  /* 3. Sémantique (noms shadcn, pour que les primitives suivent). */
+  --background: var(--p-grege);
+  --foreground: var(--p-encre);
+  --card: var(--p-blanc);
+  --card-foreground: var(--p-encre);
+  --popover: var(--p-blanc);
+  --popover-foreground: var(--p-encre);
+  --primary: var(--p-braise); /* blanc sur braise: 5,25 */
+  --primary-hover: var(--p-braise-fonce);
+  --primary-foreground: var(--p-blanc);
+  --secondary: var(--p-grege-2);
+  --secondary-foreground: var(--p-encre);
+  --muted: var(--p-grege-2);
+  --muted-foreground: var(--p-encre-2);
+  --accent: var(--p-grege-2);
+  --accent-foreground: var(--p-encre);
+  --destructive: var(--p-bordeaux); /* blanc sur bordeaux: 10,45 */
+  --destructive-foreground: var(--p-blanc);
+  --success: var(--p-vert); /* blanc sur vert: 9,11 */
+  --success-foreground: var(--p-blanc);
+  --warning: var(--p-ocre);
+  --border: var(--p-filet);
+  --input: var(--p-filet-fort);
+  --ring: var(--p-braise);
+  --eyebrow: var(--p-ocre); /* ocre en texte: 4,51 sur grège, 5,20 sur blanc */
+
+  /* Séries de données: provisoire, la mini-charte de visualisation est à venir. */
+  --chart-1: var(--p-orange);
+  --chart-2: var(--p-bordeaux);
+  --chart-3: var(--p-ocre);
+  --chart-4: var(--p-vert);
+  --chart-5: var(--p-braise);
+
+  /* Rayon unique de huit pixels. Les pastilles et les pilules font exception. */
+  --radius: 8px;
+
+  --sidebar: var(--p-grege);
+  --sidebar-foreground: var(--p-encre);
+  --sidebar-primary: var(--p-braise);
+  --sidebar-primary-foreground: var(--p-blanc);
+  --sidebar-accent: var(--p-grege-2);
+  --sidebar-accent-foreground: var(--p-encre);
+  --sidebar-border: var(--p-filet);
+  --sidebar-ring: var(--p-braise);
 }
 
 @theme inline {
+  --font-sans:
+    "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Newsreader Variable", "Newsreader", Georgia, serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -106,6 +106,7 @@ h1 {
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -115,18 +116,50 @@ h1 {
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-eyebrow: var(--eyebrow);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+
+  /* La palette reste accessible par son nom pour les surfaces de marque. */
+  --color-grege: var(--p-grege);
+  --color-orange: var(--p-orange);
+  --color-braise: var(--p-braise);
+  --color-ocre: var(--p-ocre);
+  --color-bordeaux: var(--p-bordeaux);
+  --color-vert: var(--p-vert);
+  --color-encre: var(--p-encre);
+  --color-encre-3: var(--p-encre-3);
+  --color-braise-pale: var(--p-braise-pale);
+  --color-ocre-pale: var(--p-ocre-pale);
+  --color-bordeaux-pale: var(--p-bordeaux-pale);
+  --color-vert-pale: var(--p-vert-pale);
+
+  /* Rayon unique: toutes les classes rounded-* retombent sur 8 px. */
+  --radius-xs: 4px;
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+
+  /* Ombres teintées brun encre, lumière venant du haut à gauche. */
+  --shadow-xs: 0 1px 2px rgb(38 32 26 / 0.06);
+  --shadow-sm: 1px 1px 2px rgb(38 32 26 / 0.05), 1px 2px 6px rgb(38 32 26 / 0.05);
+  --shadow-md: 1px 2px 4px rgb(38 32 26 / 0.05), 2px 6px 16px rgb(38 32 26 / 0.08);
+  --shadow-lg: 2px 4px 8px rgb(38 32 26 / 0.06), 4px 12px 28px rgb(38 32 26 / 0.1);
+  --shadow-xl: 2px 6px 12px rgb(38 32 26 / 0.07), 6px 20px 44px rgb(38 32 26 / 0.14);
+  --shadow-2xl: 4px 10px 20px rgb(38 32 26 / 0.08), 8px 28px 64px rgb(38 32 26 / 0.2);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -141,16 +174,191 @@ h1 {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    color-scheme: light;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground m-0;
     min-height: 100vh;
+    font-family: var(--font-sans);
+    /* Niveau « Petit » de l'échelle (14 / 1,50): la base d'une interface dense. */
+    font-size: 14px;
+    line-height: 1.5;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Le serif donne la voix (titres de page), la sans-serif donne la clarté. */
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--p-orange) 30%, transparent);
+  }
+}
+
+@layer utilities {
+  /* --- Échelle typographique (annexe 2 du livre de marque) --------------- */
+  .t-display {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(2.5rem, 1.6rem + 3.2vw, 3.5rem); /* 56 */
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+  .t-h1 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(2rem, 1.5rem + 1.6vw, 2.5rem); /* 40 */
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+  .t-h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.875rem; /* 30 */
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+  }
+  .t-h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 1.5rem; /* 24 */
+    line-height: 1.25;
+  }
+  .t-quote {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.4375rem; /* 23 */
+    line-height: 1.45;
+  }
+  .t-eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem; /* 13 */
+    line-height: 1.3;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--eyebrow);
+  }
+  .t-body {
+    font-size: 1.0625rem; /* 17 */
+    line-height: 1.6;
+    max-width: 65ch;
+  }
+  .t-small {
+    font-size: 0.875rem; /* 14 */
+    line-height: 1.5;
+  }
+  /* Chiffres tabulaires: obligatoires partout où il y a de la donnée. */
+  .t-num {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum";
+  }
+
+  /* --- Matière ----------------------------------------------------------- */
+  /* Le ruban: le dégradé signature en souligné. Jamais en fond de page. */
+  .ruban {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--p-degrade);
+  }
+
+  /*
+   * Surface de marque: dégradé continu et grain fin. Le grain ne touche
+   * jamais un chiffre, un graphique ou un tableau, et aucun texte courant
+   * ne se pose sur cette surface.
+   */
+  .matiere {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(
+      115deg,
+      var(--p-bordeaux) 0%,
+      var(--p-braise) 52%,
+      var(--p-orange) 100%
+    );
+  }
+  .matiere::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  .cart-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--p-filet-fort) transparent;
+  }
+  .cart-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+  .cart-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .cart-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--p-filet-fort);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  .cart-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--p-encre-3);
+    background-clip: padding-box;
+  }
+
+  /* Texte de description issu du markdown des produits. */
+  .prose-produit > * + * {
+    margin-top: 0.6em;
+  }
+  .prose-produit ul {
+    list-style: disc;
+    padding-left: 1.2em;
+  }
+  .prose-produit li + li {
+    margin-top: 0.2em;
+  }
+  .prose-produit strong {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .prose-produit a {
+    color: var(--p-ocre);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .animate-fade-up-delay {
+    animation: fade-up 480ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 80ms;
+  }
+  .animate-fade-up-delay-2 {
+    animation: fade-up 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: 140ms;
   }
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -158,43 +366,15 @@ h1 {
   }
 }
 
-@layer utilities {
-  .cart-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, var(--primary) 62%, transparent) transparent;
-  }
-
-  .cart-scrollbar::-webkit-scrollbar {
-    width: 10px;
-  }
-
-  .cart-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .cart-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #ffa000, #ff4b00);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .cart-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #ffb52e, #ff5f1f);
-    background-clip: padding-box;
-  }
-
-  .animate-fade-up {
-    animation: fade-up 480ms ease-out both;
-  }
-
-  .animate-fade-up-delay {
-    animation: fade-up 560ms ease-out both;
-    animation-delay: 90ms;
-  }
-
-  .animate-fade-up-delay-2 {
-    animation: fade-up 620ms ease-out both;
-    animation-delay: 140ms;
+/* Les animations respectent prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

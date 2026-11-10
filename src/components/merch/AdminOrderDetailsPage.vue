@@ -1,105 +1,102 @@
 <template>
-  <section class="mt-5">
-    <Card class="shadow-md">
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
+  <section>
+    <div class="bg-card rounded-lg border shadow-sm">
+      <div
+        class="flex flex-col items-start justify-between gap-3 px-5 pt-5 sm:flex-row sm:items-center sm:px-6 sm:pt-6"
       >
         <div>
-          <CardTitle>Order details</CardTitle>
-          <CardDescription>Admin view of submitted items</CardDescription>
+          <p class="t-eyebrow">Administration</p>
+          <h1 class="t-h2 mt-2">Détail de la commande</h1>
+          <p class="text-muted-foreground mt-1 text-sm">
+            Les articles soumis, avec le fournisseur de chacun.
+          </p>
         </div>
-        <Button variant="outline" @click="$emit('back')"
-          >Retour en arrière</Button
-        >
-      </CardHeader>
-      <CardContent>
+        <Button variant="outline" @click="$emit('back')">
+          <ArrowLeft class="size-4" />
+          Retour en arrière
+        </Button>
+      </div>
+      <div class="p-5 sm:p-6">
         <div
           v-if="cartLines.length === 0"
-          class="rounded-xl border border-dashed p-6 text-center"
+          class="border-input rounded-lg border border-dashed p-6 text-center"
         >
-          <p class="font-medium">{{ t.emptyCart }}</p>
+          <p class="font-semibold">{{ t.emptyCart }}</p>
           <p class="text-muted-foreground text-sm">{{ t.addFromCatalog }}</p>
         </div>
 
-        <div v-else class="space-y-3">
-          <div
+        <ul v-else class="space-y-3">
+          <li
             v-for="line in cartLines"
             :key="line.id"
-            class="rounded-xl border p-4"
+            class="rounded-lg border p-4"
           >
-            <div class="flex items-start gap-3">
+            <div class="flex items-start gap-4">
               <div
-                class="bg-muted/20 h-20 w-20 shrink-0 overflow-hidden rounded-xl border"
+                class="size-20 shrink-0 overflow-hidden rounded-md border bg-white"
               >
                 <img
-                  v-if="line.product.imageGallery?.[0]"
-                  :src="line.product.imageGallery[0]"
+                  v-if="getPrimaryImage(line.product, line.selectedOptions)"
+                  :src="
+                    getPrimaryImage(line.product, line.selectedOptions) ?? ''
+                  "
                   :alt="line.product.name[locale]"
-                  class="h-full w-full object-contain p-1"
+                  class="size-full object-contain p-1"
                   loading="lazy"
                 />
-                <div
-                  v-else
-                  :class="[
-                    'h-full w-full bg-gradient-to-br',
-                    line.product.gradientClass ??
-                      'from-zinc-200/60 via-zinc-100/40 to-transparent',
-                  ]"
-                />
+                <div v-else class="matiere size-full" aria-hidden="true" />
               </div>
-              <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+              >
                 <div class="min-w-0">
-                  <p class="font-medium break-words">
+                  <p class="font-semibold break-words">
                     {{ line.product.name[locale] }}
                   </p>
-                  <p class="text-muted-foreground mt-1 break-words text-xs">
-                    {{ t.variants }}:
-                    {{ getVariantLabels(line).join(" | ") || t.noVariants }}
-                  </p>
-                  <p class="text-muted-foreground mt-1 text-xs">
+                  <VariantChips
+                    :chips="getVariantChips(line, locale)"
+                    :fallback="t.noVariants"
+                  />
+                  <p class="text-muted-foreground t-num mt-0.5 text-xs">
                     {{ t.quantity }}: {{ line.quantity }}
                   </p>
+                  <Badge variant="outline" class="mt-2 gap-1.5">
+                    <span
+                      class="size-2 rounded-full"
+                      :style="{ backgroundColor: getSupplierDot(line) }"
+                      aria-hidden="true"
+                    />
+                    {{ getSupplierName(line.product.supplier) }}
+                  </Badge>
                 </div>
-                <p class="shrink-0 font-semibold">
+                <p class="t-num shrink-0 font-semibold">
                   {{ formatCurrency.format(line.lineTotal) }}
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </li>
+        </ul>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from "lucide-vue-next";
+
+import VariantChips from "@/components/merch/VariantChips.vue";
+import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
-import Card from "@/components/ui/Card.vue";
-import CardContent from "@/components/ui/CardContent.vue";
-import CardDescription from "@/components/ui/CardDescription.vue";
-import CardHeader from "@/components/ui/CardHeader.vue";
-import CardTitle from "@/components/ui/CardTitle.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import type { ProductVariantGroup, StoreLocale } from "@/types/merch";
+import { getSupplierName, SUPPLIERS } from "@/config/suppliers";
+import { getPrimaryImage } from "@/lib/product-images";
+import { getVariantChips } from "@/lib/variant-labels";
+import type { CartLineView, StoreLocale } from "@/types/merch";
 
-type CartLine = {
-  id: string;
-  quantity: number;
-  lineTotal: number;
-  selectedOptions: Record<string, string>;
-  selectedOptionLabels?: Record<string, string>;
-  product: {
-    name: Record<StoreLocale, string>;
-    variantGroups?: ProductVariantGroup[];
-    imageGallery?: string[];
-    gradientClass?: string;
-  };
-};
-
-const props = defineProps<{
+defineProps<{
   t: MerchCopy;
   locale: StoreLocale;
-  cartLines: CartLine[];
+  cartLines: CartLineView[];
   formatCurrency: Intl.NumberFormat;
 }>();
 
@@ -107,33 +104,8 @@ defineEmits<{
   back: [];
 }>();
 
-const getVariantLabels = (line: CartLine) => {
-  const mappedLabels = (line.product.variantGroups ?? [])
-    .map((group) => {
-      const selectedOption = group.options.find(
-        (option) => option.id === line.selectedOptions[group.id],
-      );
-      if (!selectedOption) {
-        return null;
-      }
-
-      return `${group.label[props.locale]}: ${selectedOption.label[props.locale]}`;
-    })
-    .filter((value): value is string => Boolean(value));
-
-  if (mappedLabels.length > 0) {
-    return mappedLabels;
-  }
-
-  const snapshotLabels = Object.entries(line.selectedOptionLabels ?? {})
-    .filter(([key, value]) => Boolean(key) && Boolean(value))
-    .map(([key, value]) => `${key}: ${value}`);
-  if (snapshotLabels.length > 0) {
-    return snapshotLabels;
-  }
-
-  return Object.entries(line.selectedOptions)
-    .filter(([, value]) => Boolean(value))
-    .map(([key, value]) => `${key}: ${value}`);
-};
+const getSupplierDot = (line: CartLineView) =>
+  line.product.supplier
+    ? SUPPLIERS[line.product.supplier].dot
+    : "var(--p-encre-3)";
 </script>

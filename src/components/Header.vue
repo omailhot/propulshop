@@ -1,33 +1,51 @@
 <template>
-  <header
-    class="bg-background/90 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-40 border-b backdrop-blur"
-  >
+  <!--
+    Fond plein, pas de verre dépoli: dans la charte, le verre met au point,
+    il ne floute jamais.
+  -->
+  <header class="bg-background sticky top-0 z-40 border-b">
     <div
-      class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6"
+      class="mx-auto flex h-16 max-w-[96rem] items-center justify-between gap-3 px-4 sm:px-6"
     >
       <a
         :href="localizedHome"
-        class="group flex min-w-0 flex-1 items-center gap-3"
+        class="focus-visible:ring-ring/40 flex min-w-0 items-center gap-5 rounded-md outline-none focus-visible:ring-[3px]"
         @click.prevent="$emit('open-home')"
       >
+        <!--
+          Taille minimale du wordmark: 1,5 po (144 px). En dessous, l'icône
+          prend le relais. La zone de protection vaut la largeur du « o ».
+        -->
         <img
-          src="/favicon.ico"
-          alt="Shop Propulso logo"
-          class="border-border/70 bg-background size-10 shrink-0 rounded-xl border object-contain p-1 shadow-sm transition group-hover:scale-105"
+          :src="wordmarkUrl"
+          alt="Propulso"
+          class="hidden h-[30px] w-[144px] shrink-0 sm:block"
+          width="144"
+          height="30"
         />
-        <div class="min-w-0">
-          <p class="truncate font-semibold tracking-tight">
+        <img
+          :src="iconUrl"
+          alt="Propulso"
+          class="h-8 w-auto shrink-0 sm:hidden"
+          width="29"
+          height="32"
+        />
+        <span class="border-border min-w-0 border-l pl-5">
+          <span class="block truncate text-[15px] leading-tight font-semibold">
             {{ title ?? m.header_name() }}
-          </p>
-          <p class="text-muted-foreground hidden truncate text-xs sm:block">
-            {{ subtitle ?? m.header_subtitle() }}
-          </p>
-        </div>
+          </span>
+          <span
+            v-if="subtitle"
+            class="text-muted-foreground block truncate text-xs leading-tight"
+          >
+            {{ subtitle }}
+          </span>
+        </span>
       </a>
 
       <div class="flex shrink-0 items-center gap-2">
         <template v-if="isAuthenticated">
-          <span class="text-muted-foreground hidden text-xs sm:inline">{{
+          <span class="text-muted-foreground hidden text-xs md:inline">{{
             sessionEmail
           }}</span>
           <Button
@@ -50,14 +68,14 @@
             {{ signOutLabel ?? "Sign out" }}
           </Button>
         </template>
-        <ThemeToggle />
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import ThemeToggle from "@/components/ThemeToggle.vue";
+import iconUrl from "@/assets/brand/propulso-icon.svg";
+import wordmarkUrl from "@/assets/brand/propulso-wordmark.svg";
 import Button from "@/components/ui/Button.vue";
 import { m } from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";

@@ -1,24 +1,24 @@
 <template>
   <div
-    class="border-border/70 bg-background/95 mb-2 inline-flex items-center gap-1 overflow-hidden rounded-full border p-1.5 sm:mb-0"
+    class="border-input bg-card inline-flex items-center gap-0.5 rounded-full border p-1"
   >
     <button
       type="button"
-      class="text-foreground/90 hover:bg-accent/80 inline-flex h-8 w-8 items-center justify-center rounded-full transition disabled:pointer-events-none disabled:opacity-40"
+      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
       :disabled="disabled || value <= min"
+      aria-label="Diminuer la quantité"
       @click="decrease"
     >
       <Minus class="size-3.5" />
     </button>
 
-    <span class="w-8 text-center text-sm font-semibold tabular-nums">{{
-      value
-    }}</span>
+    <span class="t-num w-7 text-center text-sm font-semibold">{{ value }}</span>
 
     <button
       type="button"
-      class="text-foreground/90 hover:bg-accent/80 inline-flex h-8 w-8 items-center justify-center rounded-full transition disabled:pointer-events-none disabled:opacity-40"
+      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
       :disabled="disabled || value >= max"
+      aria-label="Augmenter la quantité"
       @click="increase"
     >
       <Plus class="size-3.5" />

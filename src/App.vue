@@ -19,10 +19,9 @@
     @open-home="onBackToCatalog"
   />
 
-  <main
-    class="min-h-[calc(100vh-4rem)] overflow-x-clip bg-[radial-gradient(circle_at_14%_6%,rgba(255,160,0,0.23),transparent_34%),radial-gradient(circle_at_75%_0%,rgba(255,0,53,0.16),transparent_35%)] pb-24 xl:pb-6"
-  >
-    <div class="mx-auto min-w-0 max-w-[96rem] px-4 py-6 sm:px-6">
+  <!-- Le fond: grège, sans dégradé. Le dégradé ne sert jamais de fond de page. -->
+  <main class="min-h-[calc(100vh-4rem)] overflow-x-clip pb-24 xl:pb-8">
+    <div class="mx-auto max-w-[96rem] min-w-0 px-4 py-6 sm:px-6">
       <div v-if="currentView === 'admin'">
         <AdminDashboard
           :t="t"
@@ -40,65 +39,107 @@
       <div v-else-if="currentView === 'catalog'">
         <div
           v-if="isReadOnlyForCurrentUser"
-          class="border-border/70 mb-4 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.15),rgba(255,0,53,0.12))] p-4 shadow-sm"
+          class="border-ocre/25 bg-ocre-pale mb-4 flex items-start gap-3 rounded-lg border p-4"
+          role="status"
         >
-          <p class="text-foreground font-semibold">
-            {{ t.viewOnlyBannerTitle }}
-          </p>
-          <p class="text-foreground/85 mt-1 text-sm">
-            {{ t.viewOnlyBannerBody }}
-          </p>
+          <Lock class="text-ocre mt-0.5 size-4 shrink-0" />
+          <div>
+            <p class="font-semibold">{{ t.viewOnlyBannerTitle }}</p>
+            <p class="mt-0.5 text-sm">{{ t.viewOnlyBannerBody }}</p>
+          </div>
         </div>
-        <div
-          class="border-border/80 relative mb-4 overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_10%_15%,rgba(255,210,120,0.42),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,118,140,0.34),transparent_42%),linear-gradient(120deg,rgba(255,248,226,0.94),rgba(255,236,224,0.94))] p-5 shadow-md dark:border-amber-200/20 dark:bg-[radial-gradient(circle_at_10%_15%,rgba(255,170,70,0.2),transparent_45%),radial-gradient(circle_at_92%_8%,rgba(255,90,120,0.2),transparent_42%),linear-gradient(125deg,rgba(51,30,20,0.95),rgba(45,22,18,0.95))]"
+
+        <!--
+          L'accueil. À gauche le résultat (fond clair, chiffres tabulaires),
+          à droite la matière (dégradé grainé, ondes, un seul moment de verre).
+          Aucun texte ne se pose sur la matière.
+        -->
+        <section
+          class="bg-card animate-fade-up mb-5 grid overflow-hidden rounded-lg border shadow-sm md:grid-cols-[minmax(0,1fr)_17rem] lg:grid-cols-[minmax(0,1fr)_24rem]"
         >
-          <p
-            class="mb-3 mx-auto inline-flex w-fit rounded-full border border-amber-300/60 bg-amber-100/75 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase text-amber-900 dark:border-amber-300/35 dark:bg-amber-400/15 dark:text-amber-100"
-          >
-            Bienvenue au Shop Propulso!
-          </p>
-          <p class="text-foreground pl-2.5 text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
-            Le comité social est fier de vous présenter le catalogue pour la première édition du Shop Propulso.
-          </p>
-          <p class="text-foreground pl-2.5 text-sm leading-relaxed sm:text-base dark:text-amber-50/95">
-            Pour inaugurer cette première édition, un crédit de
-            <span class="font-semibold">250 $ par employé</span> est offert,
-            utilisable pour cette édition seulement. Les prix affichés comprennent les taxes.
-          </p>
-          <p
-            class="mt-3 rounded-xl border border-red-200/70 bg-white/65 px-3 py-2 text-sm leading-relaxed text-red-950 dark:border-red-300/35 dark:bg-black/25 dark:text-red-100"
-          >
-            <span class="font-semibold"
-              >Date limite pour commander: 1 mars 2026.</span
-            >
-            Le crédit restant est non transférable à la prochaine édition, non monnayable et non remboursable.
-          </p>
-        </div>
+          <div class="p-6 sm:p-8">
+            <p class="t-eyebrow">{{ t.welcomeEyebrow }}</p>
+            <h1 class="t-h1 mt-3">{{ t.welcomeTitle }}</h1>
+            <span class="ruban mt-4 w-24" aria-hidden="true" />
+            <p class="t-body text-muted-foreground mt-5">
+              {{ t.welcomeBody }}
+            </p>
+
+            <dl class="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2">
+              <div class="bg-secondary/60 rounded-md border p-4">
+                <dt
+                  class="text-muted-foreground flex items-center justify-between gap-2 text-xs"
+                >
+                  {{ t.welcomeCreditLabel }}
+                  <Badge v-if="EDITION.creditIsPlaceholder" variant="warning">
+                    {{ t.toConfirm }}
+                  </Badge>
+                </dt>
+                <dd class="t-num mt-1 text-2xl font-semibold">
+                  {{ welcomeCredit }}
+                </dd>
+                <dd class="text-muted-foreground mt-0.5 text-xs">
+                  {{ t.welcomeCreditNote }}
+                </dd>
+              </div>
+              <div class="bg-secondary/60 rounded-md border p-4">
+                <dt
+                  class="text-muted-foreground flex items-center justify-between gap-2 text-xs"
+                >
+                  {{ t.welcomeDeadlineLabel }}
+                  <Badge v-if="EDITION.deadlineIsPlaceholder" variant="warning">
+                    {{ t.toConfirm }}
+                  </Badge>
+                </dt>
+                <dd class="t-num mt-1 text-2xl font-semibold">
+                  {{ welcomeDeadline }}
+                </dd>
+                <dd class="text-muted-foreground mt-0.5 text-xs">
+                  {{ t.welcomeDeadlineNote }}
+                </dd>
+              </div>
+            </dl>
+
+            <p class="text-muted-foreground mt-4 max-w-2xl text-xs">
+              {{ t.welcomeFinePrint }}
+            </p>
+          </div>
+          <div class="relative hidden md:block">
+            <BrandMatiere class="absolute inset-0" />
+          </div>
+        </section>
+
         <div
           v-if="!sessionUser && !authBusy"
-          class="border-border/70 mb-4 flex flex-col gap-3 rounded-2xl border bg-[linear-gradient(135deg,rgba(255,160,0,0.18),rgba(255,0,53,0.14))] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-[linear-gradient(135deg,rgba(255,160,0,0.24),rgba(255,0,53,0.2))]"
+          class="bg-card mb-4 flex flex-col gap-3 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <p class="text-foreground font-semibold">
-              {{ t.loggedOutBannerTitle }}
-            </p>
-            <p class="text-foreground/85 dark:text-foreground/80 text-sm">
+            <p class="font-semibold">{{ t.loggedOutBannerTitle }}</p>
+            <p class="text-muted-foreground mt-0.5 text-sm">
               {{ t.loggedOutBannerBody }}
             </p>
           </div>
-          <Button class="shrink-0" @click="onConnectGoogle">
+          <Button variant="brand" class="shrink-0" @click="onConnectGoogle">
             {{ t.connectGoogle }}
           </Button>
         </div>
         <div
           v-if="activeOrderConfirmedAt"
-          class="border-border/70 bg-card/80 mb-4 flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          class="bg-card mb-4 flex flex-col gap-3 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
-            <p class="font-semibold">{{ t.existingOrderBannerTitle }}</p>
-            <p class="text-muted-foreground text-sm">
-              {{ orderStatusMessage }}
-            </p>
+          <div class="flex items-start gap-3">
+            <span
+              class="bg-vert-pale text-vert mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full"
+              aria-hidden="true"
+            >
+              <Check class="size-4" />
+            </span>
+            <div>
+              <p class="font-semibold">{{ t.existingOrderBannerTitle }}</p>
+              <p class="text-muted-foreground mt-0.5 text-sm">
+                {{ orderStatusMessage }}
+              </p>
+            </div>
           </div>
           <div class="flex shrink-0 flex-col gap-2 sm:flex-row">
             <Button
@@ -109,12 +150,12 @@
             >
               {{ t.unlockOrder }}
             </Button>
-            <Button @click="onOpenDashboard">
+            <Button variant="brand" @click="onOpenDashboard">
               {{ t.viewMyOrder }}
             </Button>
           </div>
         </div>
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
           <CatalogSection
             :t="t"
             :locale="locale"
@@ -122,7 +163,7 @@
             :cart-lines="derived.cartLines.value"
             :format-currency="formatCurrency"
             :view-only="isReadOnlyForCurrentUser"
-            @open-product="actions.setActiveProductId"
+            @open-product="onOpenProduct"
             @quick-add="onQuickAdd"
           />
           <CartSidebar
@@ -197,6 +238,7 @@
     :open="Boolean(state.activeProductId.value)"
     :format-currency="formatCurrency"
     :read-only="!isOrderEditable || isReadOnlyForCurrentUser"
+    :initial-options="activeProductInitialOptions"
     @close="actions.setActiveProductId(null)"
     @add-to-cart="onAddToCart"
   />
@@ -208,21 +250,23 @@
 
   <div
     v-if="showOverwriteModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+    class="bg-encre/55 fixed inset-0 z-50 flex items-center justify-center px-4"
     @click.self="onCancelOverwriteModal"
   >
     <div
-      class="border-border/70 bg-background relative w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+      class="bg-card relative w-full max-w-md rounded-lg border p-6 shadow-2xl"
+      role="dialog"
+      aria-modal="true"
     >
       <button
         type="button"
-        class="text-muted-foreground hover:text-foreground absolute top-3 right-3 rounded-md p-1 transition-colors"
-        aria-label="Fermer"
+        class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/40 absolute top-3 right-3 cursor-pointer rounded-md p-1 transition-colors outline-none focus-visible:ring-[3px]"
+        :aria-label="t.closeLabel"
         @click="onCancelOverwriteModal"
       >
         <X class="size-4" />
       </button>
-      <h3 class="text-lg font-semibold">{{ t.orderPlacedStatus }}</h3>
+      <h3 class="t-h3 pr-6 font-semibold">{{ t.orderPlacedStatus }}</h3>
       <p class="text-muted-foreground mt-2 text-sm">
         {{ t.existingOrderBannerTitle }}
       </p>
@@ -233,9 +277,9 @@
         <Button variant="outline" @click="onGoToExistingOrderFromModal">
           {{ t.viewMyOrder }}
         </Button>
-        <Button @click="onConfirmOverwriteOrder">{{
-          t.overwriteOrderAction
-        }}</Button>
+        <Button variant="destructive" @click="onConfirmOverwriteOrder">
+          {{ t.overwriteOrderAction }}
+        </Button>
       </div>
     </div>
   </div>
@@ -243,17 +287,17 @@
   <button
     v-if="currentView === 'catalog' && !isReadOnlyForCurrentUser"
     type="button"
-    class="border-border/70 bg-background/95 hover:bg-background fixed inset-x-0 bottom-0 z-30 flex min-h-[4.5rem] cursor-pointer items-center justify-between border-t px-4 py-4 backdrop-blur transition-colors xl:hidden"
+    class="bg-card hover:bg-secondary fixed inset-x-0 bottom-0 z-30 flex min-h-[4.5rem] cursor-pointer items-center justify-between border-t px-4 py-4 shadow-lg transition-colors xl:hidden"
     @click="actions.setCartOpen(true)"
   >
     <div class="flex items-center gap-2">
       <ShoppingBasket class="size-4" />
-      <span class="font-medium">{{ t.cartBuilder }}</span>
-      <span class="text-muted-foreground text-sm"
+      <span class="font-semibold">{{ t.cartBuilder }}</span>
+      <span class="text-muted-foreground t-num text-sm"
         >{{ derived.itemCount.value }} {{ t.items }}</span
       >
     </div>
-    <span class="font-semibold">{{
+    <span class="t-num font-semibold">{{
       formatCurrency.format(derived.subtotal.value)
     }}</span>
   </button>
@@ -278,9 +322,10 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingBasket, X } from "lucide-vue-next";
+import { Check, Lock, ShoppingBasket, X } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
+import BrandMatiere from "@/components/brand/BrandMatiere.vue";
 import Header from "@/components/Header.vue";
 import AdminDashboard from "@/components/merch/AdminDashboard.vue";
 import AdminOrderDetailsPage from "@/components/merch/AdminOrderDetailsPage.vue";
@@ -290,10 +335,13 @@ import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
 import OrderPlacedPage from "@/components/merch/OrderPlacedPage.vue";
 import ProductDetailsModal from "@/components/merch/ProductDetailsModal.vue";
+import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import { Toaster } from "@/components/ui/sonner";
+import { EDITION, formatCredit, formatDeadlineLong } from "@/config/edition";
 import { merchCopy } from "@/config/merch-copy";
 import { COMPANY_CREDIT, products } from "@/config/merch-store";
+import type { SupplierId } from "@/config/suppliers";
 import { useMerchStore } from "@/hooks/use-merch-store";
 import {
   buildCartItemId,
@@ -305,9 +353,11 @@ import {
   normalizeSelectedOptions,
   resolveOrderProductSelection,
   validateGiftCardAmount,
+  withImpliedOptions,
 } from "@/lib/merch-order";
 import { neonClient } from "@/lib/neon-client";
-import type { StoreLocale } from "@/types/merch";
+import { formatVariantChips, getVariantChips } from "@/lib/variant-labels";
+import type { CartLineView, StoreLocale } from "@/types/merch";
 
 const locale = computed<StoreLocale>(() => "fr");
 const t = computed(() => merchCopy[locale.value]);
@@ -362,6 +412,7 @@ const adminItemsSummary = ref<
     variants: string;
     total_quantity: number;
     order_count: number;
+    supplier: SupplierId | null;
   }>
 >([]);
 const adminLoading = ref(false);
@@ -370,35 +421,14 @@ const activeOrderId = ref<string | null>(null);
 const activeOrderLocked = ref(false);
 const activeOrderPlacedAt = ref<string | null>(null);
 const activeOrderConfirmedAt = ref<string | null>(null);
-const activeOrderLockDeadlineAt = ref("2026-03-01T23:59:59Z");
+const activeOrderLockDeadlineAt = ref<string>(EDITION.orderDeadline);
 const isPersistingDraft = ref(false);
 const pendingCartAction = ref<null | (() => void)>(null);
 const adminSelectedOrderId = ref<string | null>(null);
 let adminRefreshTimer: number | null = null;
 let viewOnlyRefreshTimer: number | null = null;
 const placedOrderPreview = ref<{
-  cartLines: Array<{
-    id: string;
-    quantity: number;
-    lineTotal: number;
-    selectedOptions: Record<string, string>;
-    selectedOptionLabels?: Record<string, string>;
-    product: {
-      name: Record<StoreLocale, string>;
-      imageGallery?: string[];
-      gradientClass?: string;
-      variantGroups?: Array<{
-        id: string;
-        label: Record<StoreLocale, string>;
-        type: "size" | "color" | "select";
-        options: Array<{
-          id: string;
-          label: Record<StoreLocale, string>;
-          swatchHex?: string;
-        }>;
-      }>;
-    };
-  }>;
+  cartLines: CartLineView[];
   subtotal: number;
   creditUsed: number;
   creditRemaining: number;
@@ -411,28 +441,7 @@ const placedOrderPreview = ref<{
   walletToPay: 0,
 });
 const adminPreview = ref<{
-  cartLines: Array<{
-    id: string;
-    quantity: number;
-    lineTotal: number;
-    selectedOptions: Record<string, string>;
-    selectedOptionLabels?: Record<string, string>;
-    product: {
-      name: Record<StoreLocale, string>;
-      imageGallery?: string[];
-      gradientClass?: string;
-      variantGroups?: Array<{
-        id: string;
-        label: Record<StoreLocale, string>;
-        type: "size" | "color" | "select";
-        options: Array<{
-          id: string;
-          label: Record<StoreLocale, string>;
-          swatchHex?: string;
-        }>;
-      }>;
-    };
-  }>;
+  cartLines: CartLineView[];
   subtotal: number;
   creditUsed: number;
   creditRemaining: number;
@@ -452,6 +461,11 @@ const adminPreview = ref<{
   lockDeadlineLabel: "",
   orderStatusMessage: "",
 });
+
+// La sélection de départ de la fiche produit: la couleur choisie sur la carte.
+const activeProductInitialOptions = ref<Record<string, string>>({});
+const welcomeCredit = computed(() => formatCredit(locale.value));
+const welcomeDeadline = computed(() => formatDeadlineLong(locale.value));
 
 const lockDeadlineDate = computed(
   () => new Date(activeOrderLockDeadlineAt.value),
@@ -499,7 +513,18 @@ const toggleViewOnly = () => {
   void persistGlobalViewOnlySetting(!isViewOnly.value);
 };
 
-const onQuickAdd = (productId: string) => {
+const onOpenProduct = (
+  productId: string,
+  initialOptions: Record<string, string> = {},
+) => {
+  activeProductInitialOptions.value = initialOptions;
+  actions.setActiveProductId(productId);
+};
+
+const onQuickAdd = (
+  productId: string,
+  initialOptions: Record<string, string> = {},
+) => {
   if (isReadOnlyForCurrentUser.value) {
     return;
   }
@@ -512,13 +537,24 @@ const onQuickAdd = (productId: string) => {
     return;
   }
 
-  if ((product.variantGroups ?? []).length > 0) {
-    actions.setActiveProductId(productId);
+  // La couleur vient de la pastille de la carte. Toute autre option
+  // (taille, visuel) se choisit dans la fiche produit.
+  const groups = product.variantGroups ?? [];
+  if (groups.some((group) => group.type !== "color")) {
+    onOpenProduct(productId, initialOptions);
     return;
   }
 
+  const selectedOptions = Object.fromEntries(
+    groups.map((group) => {
+      const preset = initialOptions[group.id];
+      const hasPreset = group.options.some((option) => option.id === preset);
+      return [group.id, hasPreset ? preset : (group.options[0]?.id ?? "")];
+    }),
+  );
+
   runCartActionOrPromptOverwrite(() => {
-    actions.quickAdd(productId);
+    actions.addToCart(productId, normalizeSelectedOptions(selectedOptions), 1);
     actions.enqueueToast(t.value.addedToCart);
     void persistCartDraft();
   });
@@ -805,27 +841,34 @@ const onOpenAdminOrder = async (orderId: string) => {
         selected_options: Record<string, string> | null;
       }>
     ).map((item) => {
-      const selectedOptions = normalizeSelectedOptions(
+      const storedOptions = normalizeSelectedOptions(
         (item.selected_options ?? {}) as Record<string, string>,
       );
       const product = findProductByOrderProductId(
         products,
         item.product_id,
-        selectedOptions,
+        storedOptions,
+      );
+      const selectedOptions = withImpliedOptions(
+        product,
+        item.product_id,
+        storedOptions,
       );
       return {
         id: item.id,
         quantity: item.quantity,
-        lineTotal: item.line_total,
+        lineTotal: Number(item.line_total),
         selectedOptions,
         selectedOptionLabels: labelsByCartLineId.get(item.cart_line_id),
         product: {
+          id: product?.id,
           name: product?.name ?? {
             en: item.product_name,
             fr: item.product_name,
           },
+          supplier: product?.supplier ?? null,
+          images: product?.images,
           imageGallery: product?.imageGallery,
-          gradientClass: product?.gradientClass,
           variantGroups: product?.variantGroups,
         },
       };
@@ -1442,7 +1485,7 @@ const loadCurrentUserOrder = async () => {
     activeOrderLocked.value = false;
     activeOrderPlacedAt.value = null;
     activeOrderConfirmedAt.value = null;
-    activeOrderLockDeadlineAt.value = "2026-03-01T23:59:59Z";
+    activeOrderLockDeadlineAt.value = EDITION.orderDeadline;
     placedOrderPreview.value = {
       cartLines: [],
       subtotal: 0,
@@ -1508,13 +1551,18 @@ const loadCurrentUserOrder = async () => {
       selected_options: Record<string, string>;
     }>
   ).map((item) => {
-    const selectedOptions = normalizeSelectedOptions(
+    const storedOptions = normalizeSelectedOptions(
       (item.selected_options ?? {}) as Record<string, string>,
     );
     const catalogProduct = findProductByOrderProductId(
       products,
       item.product_id,
-      selectedOptions,
+      storedOptions,
+    );
+    const selectedOptions = withImpliedOptions(
+      catalogProduct,
+      item.product_id,
+      storedOptions,
     );
     const catalogProductId = catalogProduct?.id ?? item.product_id;
     return {
@@ -1619,7 +1667,7 @@ const onSignOut = async () => {
     activeOrderLocked.value = false;
     activeOrderPlacedAt.value = null;
     activeOrderConfirmedAt.value = null;
-    activeOrderLockDeadlineAt.value = "2026-03-01T23:59:59Z";
+    activeOrderLockDeadlineAt.value = EDITION.orderDeadline;
     actions.replaceCart([]);
     currentView.value = "catalog";
   }
@@ -1679,7 +1727,7 @@ const loadAdminDashboard = async () => {
 
     const orderItemsResult = await neonClient
       .from("order_items")
-      .select("order_id,product_name,quantity,selected_options");
+      .select("order_id,product_id,product_name,quantity,selected_options");
     if (orderItemsResult.error) {
       throw orderItemsResult.error;
     }
@@ -1734,29 +1782,40 @@ const loadAdminDashboard = async () => {
         variants: string;
         total_quantity: number;
         order_ids: Set<string>;
+        supplier: SupplierId | null;
       }
     >();
 
     (
       (orderItemsResult.data ?? []) as Array<{
         order_id: string;
+        product_id: string | null;
         product_name: string;
         quantity: number;
         selected_options: Record<string, string> | null;
       }>
     ).forEach((item) => {
-      const variantEntries = Object.entries(
-        normalizeSelectedOptions(
-          (item.selected_options ?? {}) as Record<string, string>,
-        ),
-      )
-        .filter(([, value]) => Boolean(value))
-        .sort(([a], [b]) => a.localeCompare(b));
+      const storedOptions = normalizeSelectedOptions(
+        (item.selected_options ?? {}) as Record<string, string>,
+      );
+      // Le fournisseur vient de la fiche produit (content/products/*.md).
+      const product = item.product_id
+        ? findProductByOrderProductId(products, item.product_id, storedOptions)
+        : null;
+      const selectedOptions = withImpliedOptions(
+        product,
+        item.product_id ?? "",
+        storedOptions,
+      );
       const variants =
-        variantEntries.length > 0
-          ? variantEntries.map(([key, value]) => `${key}: ${value}`).join(" | ")
-          : "Defaut";
-      const key = `${item.product_name}::${variants}`;
+        formatVariantChips(
+          getVariantChips(
+            { selectedOptions, product: product ?? {} },
+            locale.value,
+          ),
+        ) || "Défaut";
+      const supplier = product?.supplier ?? null;
+      const key = `${supplier ?? "-"}::${item.product_name}::${variants}`;
       const existing = itemSummaryMap.get(key);
       if (existing) {
         existing.total_quantity += item.quantity;
@@ -1770,6 +1829,7 @@ const loadAdminDashboard = async () => {
         variants,
         total_quantity: item.quantity,
         order_ids: new Set([item.order_id]),
+        supplier,
       });
     });
 
@@ -1780,6 +1840,7 @@ const loadAdminDashboard = async () => {
         variants: entry.variants,
         total_quantity: entry.total_quantity,
         order_count: entry.order_ids.size,
+        supplier: entry.supplier,
       }))
       .sort((a, b) => b.total_quantity - a.total_quantity);
   } catch (error) {

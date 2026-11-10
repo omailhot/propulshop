@@ -1,4 +1,25 @@
-Welcome to your new TanStack app!
+# Shop Propulso, deuxième édition
+
+Boutique interne des employés, à la charte du livre de marque (édition 1, novembre 2026).
+
+| Pour changer... | Aller dans... |
+|---|---|
+| Le montant du crédit, la date limite | `src/config/edition.ts` |
+| Un produit, ses couleurs, son fournisseur | `content/products/*.md` (guide: `content/README.md`) |
+| La liste des fournisseurs | `src/config/suppliers.ts` |
+| Les couleurs, la typographie, les rayons, les ombres | `src/styles.css` (jetons de marque) |
+| Le logo | `src/assets/brand/` |
+
+```bash
+deno install      # une seule fois, ou après un changement de dépendances
+deno task dev     # http://localhost:3014
+deno task test
+deno task build
+```
+
+---
+
+Le reste de ce fichier vient du gabarit d'origine.
 
 # Getting Started
 

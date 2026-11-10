@@ -2,10 +2,15 @@
   <Drawer :open="open" :title="t.productDetails" @close="$emit('close')">
     <div
       v-if="product"
-      class="mx-auto w-full max-h-[calc(86dvh-2rem)] max-w-7xl overflow-y-auto pr-1"
+      class="mx-auto max-h-[calc(86dvh-2rem)] w-full max-w-7xl overflow-y-auto pr-1"
     >
-      <div class="mb-4 flex justify-end">
-        <Button variant="ghost" size="icon" @click="$emit('close')">
+      <div class="mb-2 flex justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          :aria-label="t.closeLabel"
+          @click="$emit('close')"
+        >
           <X class="size-4" />
         </Button>
       </div>
@@ -15,54 +20,85 @@
           :id="product.id"
           :alt="product.name[locale]"
           :image-gallery="variantImageGallery"
-          :gradient-class="product.gradientClass"
           :zoomable="true"
-          class-name="h-[22rem] border md:h-[30rem]"
+          class-name="h-[22rem] rounded-lg border md:h-[30rem]"
         />
 
-        <div class="bg-muted/20 flex max-h-[70vh] min-h-0 flex-col rounded-xl border p-4">
-          <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pb-24 pr-1">
+        <div
+          class="bg-card flex max-h-[70vh] min-h-0 flex-col rounded-lg border shadow-sm"
+        >
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div>
-              <h2 class="text-xl font-semibold">{{ product.name[locale] }}</h2>
-              <p class="text-muted-foreground text-sm">
-                {{ product.description[locale] }}
+              <p class="t-eyebrow">{{ t.categoryLabels[product.category] }}</p>
+              <h2 class="t-h3 mt-2 font-semibold">
+                {{ product.name[locale] }}
+              </h2>
+              <p class="t-num mt-2 text-xl font-semibold">
+                {{ formatCurrency.format(unitPrice) }}
               </p>
-              <p class="mt-2 text-base font-semibold">
-                {{ formatCurrency.format(product.price) }}
-              </p>
+              <div
+                v-if="descriptionHtml"
+                class="prose-produit text-muted-foreground mt-3 text-sm"
+                v-html="descriptionHtml"
+              />
             </div>
 
             <div v-for="group in variantGroups" :key="group.id">
-              <p class="mb-2 text-sm font-medium">
-                {{ getVariantGroupLabel(group) }}
+              <p class="mb-2 text-sm">
+                <span class="font-semibold">{{ group.label[locale] }}</span>
+                <span
+                  v-if="getSelectedLabel(group)"
+                  class="text-muted-foreground"
+                >
+                  : {{ getSelectedLabel(group) }}
+                </span>
               </p>
-              <div class="flex flex-wrap gap-2">
-                <Button
+
+              <ColorSwatches
+                v-if="group.type === 'color'"
+                :label="group.label[locale]"
+                :options="toSwatchOptions(group)"
+                :model-value="selections[group.id]"
+                @update:model-value="
+                  (optionId) => setSelection(group.id, optionId)
+                "
+              />
+
+              <!--
+                Le choix actif passe à l'encre, pas au braise: le bouton
+                plein braise reste unique sur cet écran.
+              -->
+              <div
+                v-else
+                role="radiogroup"
+                :aria-label="group.label[locale]"
+                class="flex flex-wrap gap-2"
+              >
+                <button
                   v-for="option in group.options"
                   :key="option.id"
-                  size="sm"
-                  :variant="
-                    selections[group.id] === option.id ? 'default' : 'outline'
-                  "
-                  class="gap-2"
+                  type="button"
+                  role="radio"
+                  :aria-checked="selections[group.id] === option.id"
+                  :class="[
+                    'focus-visible:ring-ring/40 inline-flex h-9 min-w-11 cursor-pointer items-center justify-center rounded-md border px-3 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px]',
+                    selections[group.id] === option.id
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-input bg-card text-foreground hover:bg-accent',
+                  ]"
                   @click="setSelection(group.id, option.id)"
                 >
-                  <span
-                    v-if="group.type === 'color' && option.swatchHex"
-                    class="inline-block h-3 w-3 rounded-full border"
-                    :style="{ backgroundColor: option.swatchHex }"
-                  />
                   {{ option.label[locale] }}
-                </Button>
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-3">
               <div>
-                <span class="text-sm font-medium">{{ t.quantity }}</span>
+                <span class="text-sm font-semibold">{{ t.quantity }}</span>
                 <p
                   v-if="isGiftCardProduct"
-                  class="text-muted-foreground mt-1 text-xs"
+                  class="text-muted-foreground mt-0.5 text-xs"
                 >
                   {{ t.giftCardQuantityLimit }}
                 </p>
@@ -72,10 +108,17 @@
           </div>
 
           <div
-            class="sticky bottom-0 mt-2 border-t bg-muted/20 pt-3"
-            style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.25rem);"
+            class="border-t p-4"
+            style="
+              padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+            "
           >
-            <Button class="w-full" :disabled="readOnly" @click="addSelectionToCart">
+            <Button
+              class="w-full"
+              size="lg"
+              :disabled="readOnly"
+              @click="addSelectionToCart"
+            >
               {{ t.addSelection }}
             </Button>
           </div>
@@ -91,10 +134,17 @@ import { computed, ref, watch } from "vue";
 
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
 import Button from "@/components/ui/Button.vue";
+import ColorSwatches from "@/components/ui/ColorSwatches.vue";
 import Drawer from "@/components/ui/Drawer.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { getMaxQuantityForProductId, isGiftCardProductId } from "@/lib/merch-quantity";
+import { renderMarkdown } from "@/lib/markdown";
+import { resolveOrderProductSelection } from "@/lib/merch-order";
+import {
+  getMaxQuantityForProductId,
+  isGiftCardProductId,
+} from "@/lib/merch-quantity";
+import { getImagesForSelection } from "@/lib/product-images";
 import type { Product, ProductVariantGroup, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
@@ -104,6 +154,8 @@ const props = defineProps<{
   open: boolean;
   formatCurrency: Intl.NumberFormat;
   readOnly?: boolean;
+  /** Sélection de départ, ex. la couleur choisie sur la carte du catalogue. */
+  initialOptions?: Record<string, string>;
 }>();
 
 const emit = defineEmits<{
@@ -121,13 +173,17 @@ const selections = ref<Record<string, string>>({});
 const quantity = ref(1);
 
 watch(
-  () => props.product?.id,
+  () => [props.product?.id, props.open] as const,
   () => {
+    if (!props.open) {
+      return;
+    }
     selections.value = Object.fromEntries(
-      (props.product?.variantGroups ?? []).map((group) => [
-        group.id,
-        group.options[0]?.id ?? "",
-      ]),
+      (props.product?.variantGroups ?? []).map((group) => {
+        const preset = props.initialOptions?.[group.id];
+        const hasPreset = group.options.some((option) => option.id === preset);
+        return [group.id, hasPreset && preset ? preset : (group.options[0]?.id ?? "")];
+      }),
     );
     quantity.value = 1;
   },
@@ -141,61 +197,28 @@ const maxQuantity = computed(() =>
 const isGiftCardProduct = computed(() =>
   props.product ? isGiftCardProductId(props.product.id) : false,
 );
-const variantImageGallery = computed(() => {
-  if (!props.product?.imageGallery?.length) {
-    return props.product?.imageGallery;
-  }
+const unitPrice = computed(() =>
+  props.product
+    ? resolveOrderProductSelection(props.product, selections.value).unitPrice
+    : 0,
+);
+const descriptionHtml = computed(() =>
+  props.product ? renderMarkdown(props.product.description[props.locale]) : "",
+);
+const variantImageGallery = computed(() =>
+  props.product ? getImagesForSelection(props.product, selections.value) : [],
+);
 
-  const selectedGroups = (props.product.variantGroups ?? [])
-    .map((group) => {
-      const selected = selections.value[group.id];
-      if (!selected) {
-        return null;
-      }
-      return { groupId: group.id.toLowerCase(), selected: selected.toLowerCase() };
-    })
-    .filter((value): value is { groupId: string; selected: string } => Boolean(value));
-  if (selectedGroups.length === 0) {
-    return props.product.imageGallery;
-  }
+const toSwatchOptions = (group: ProductVariantGroup) =>
+  group.options.map((option) => ({
+    id: option.id,
+    label: option.label[props.locale],
+    hex: option.swatchHex ?? "#FFFFFF",
+  }));
 
-  const matches = props.product.imageGallery.filter((image) =>
-    selectedGroups.every(({ groupId, selected }) => {
-      const normalized = image.toLowerCase();
-      if (groupId.includes("color")) {
-        return normalized.includes(selected);
-      }
-      if (groupId.includes("image")) {
-        if (selected === "logo") {
-          return normalized.includes("logo") || normalized.includes("_2.");
-        }
-        if (selected === "rocket") {
-          return normalized.includes("rocket") || normalized.includes("_1.");
-        }
-        return normalized.includes(selected);
-      }
-      return true;
-    }),
-  );
-  if (matches.length === 0 || matches.length === props.product.imageGallery.length) {
-    return props.product.imageGallery;
-  }
-
-  return [
-    ...matches,
-    ...props.product.imageGallery.filter((image) => !matches.includes(image)),
-  ];
-});
-
-const getVariantGroupLabel = (group: ProductVariantGroup) => {
-  if (group.type === "size") {
-    return props.locale === "fr" ? "Tailles" : "Sizes";
-  }
-  if (group.type === "color") {
-    return props.locale === "fr" ? "Couleurs" : "Colors";
-  }
-  return group.label[props.locale];
-};
+const getSelectedLabel = (group: ProductVariantGroup) =>
+  group.options.find((option) => option.id === selections.value[group.id])
+    ?.label[props.locale] ?? "";
 
 const setSelection = (groupId: string, optionId: string) => {
   selections.value = {

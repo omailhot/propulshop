@@ -37,7 +37,9 @@ describe("resolveOrderProductSelection", () => {
 			id: "zip",
 			category: "wearables",
 			price: 66,
-			gradientClass: "",
+			supplier: "printeez",
+			images: [],
+			imageGallery: [],
 			name: { en: "Zip", fr: "Zip" },
 			description: { en: "", fr: "" },
 			variantGroups: [

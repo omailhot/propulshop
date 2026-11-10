@@ -4,91 +4,105 @@
       <article
         v-for="product in visibleProducts"
         :key="product.id"
-        class="border-border/60 bg-card/80 flex h-full cursor-pointer flex-col rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        class="bg-card focus-visible:ring-ring/40 flex h-full cursor-pointer flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow outline-none hover:shadow-md focus-visible:ring-[3px]"
         tabindex="0"
-        @click="$emit('open-product', product.id)"
-        @keydown.enter.prevent="$emit('open-product', product.id)"
-        @keydown.space.prevent="$emit('open-product', product.id)"
+        @click="openProduct(product)"
+        @keydown.enter.prevent="openProduct(product)"
+        @keydown.space.prevent="openProduct(product)"
       >
         <ProductImageCarousel
           :id="product.id"
           :alt="product.name[locale]"
-          :image-gallery="product.imageGallery"
-          :gradient-class="product.gradientClass"
-          class-name="mb-4 h-80"
+          :image-gallery="getCardImages(product)"
+          class-name="h-72 border-b"
         />
 
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0 max-w-[80%]">
-            <h3 class="font-semibold">{{ product.name[locale] }}</h3>
-            <p class="text-muted-foreground mt-1 text-sm">
-              {{ getCardDescription(product.description[locale]) }}
-            </p>
-            <p
-              v-if="isGiftCardProduct(product.id)"
-              class="text-muted-foreground/85 mt-1 text-[11px] font-medium"
-            >
-              {{ t.giftCardQuantityLimit }}
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="font-semibold">
+        <div class="flex flex-1 flex-col p-4">
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="min-w-0 text-[15px] leading-snug font-semibold">
+              {{ product.name[locale] }}
+            </h3>
+            <p class="t-num shrink-0 text-right leading-snug font-semibold">
               {{ formatCurrency.format(product.price) }}
             </p>
-            <p class="text-muted-foreground text-xs whitespace-nowrap">{{ t.perItem }}</p>
           </div>
-        </div>
 
-        <div
-          :class="[
-            'mt-auto grid gap-2 pt-4',
-            viewOnly ? 'grid-cols-1' : 'grid-cols-2',
-          ]"
-        >
-          <Button
-            variant="outline"
-            @click.stop="$emit('open-product', product.id)"
+          <p
+            v-if="getCardDescription(product)"
+            class="text-muted-foreground mt-1.5 text-sm"
           >
-            {{ t.viewDetails }}
-          </Button>
-          <TooltipProvider v-if="!viewOnly && isGiftCardLimitReached(product.id)">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <span class="inline-flex w-full" @click.stop>
-                  <Button
-                    class="w-full"
-                    disabled
-                    @click.stop
-                  >
-                    <ShoppingCart class="size-4" />
-                    {{
-                      (product.variantGroups ?? []).length > 0
-                        ? t.selectVariant
-                        : t.quickAdd
-                    }}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                :side-offset="8"
-                class="z-[90] max-w-80 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm leading-relaxed font-semibold text-zinc-50 shadow-xl"
-              >
-                {{ t.giftCardLimitReached }}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button
-            v-else-if="!viewOnly"
-            @click.stop="$emit('quick-add', product.id)"
+            {{ getCardDescription(product) }}
+          </p>
+
+          <!-- Un produit, plusieurs couleurs: une pastille par couleur. -->
+          <div
+            v-if="getColorGroup(product)"
+            class="mt-3 flex items-center gap-2.5"
           >
-            <ShoppingCart class="size-4" />
-            {{
-              (product.variantGroups ?? []).length > 0
-                ? t.selectVariant
-                : t.quickAdd
-            }}
-          </Button>
+            <ColorSwatches
+              size="sm"
+              :label="t.colorLabel"
+              :options="getSwatchOptions(product)"
+              :model-value="getSelectedColor(product)"
+              @update:model-value="
+                (colorId) => setSelectedColor(product.id, colorId)
+              "
+            />
+            <span class="text-muted-foreground text-xs">
+              {{ getSelectedColorLabel(product) }}
+            </span>
+          </div>
+
+          <p
+            v-if="isGiftCardProduct(product.id)"
+            class="text-muted-foreground mt-2 text-xs"
+          >
+            {{ t.giftCardQuantityLimit }}
+          </p>
+
+          <div
+            :class="[
+              'mt-auto grid gap-2 pt-4',
+              viewOnly ? 'grid-cols-1' : 'grid-cols-2',
+            ]"
+          >
+            <Button variant="outline" @click.stop="openProduct(product)">
+              {{ t.viewDetails }}
+            </Button>
+            <TooltipProvider
+              v-if="!viewOnly && isGiftCardLimitReached(product.id)"
+            >
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <span class="inline-flex w-full" @click.stop>
+                    <Button variant="brand" class="w-full" disabled @click.stop>
+                      <ShoppingCart class="size-4" />
+                      {{ t.quickAdd }}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  :side-offset="8"
+                  class="bg-encre text-grege z-[90] max-w-80 rounded-md px-3 py-2 text-[13px] leading-relaxed font-normal shadow-lg"
+                >
+                  {{ t.giftCardLimitReached }}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <!--
+              Contour braise, pas de fond plein: le seul bouton plein de
+              l'écran est celui qui mène à la confirmation du panier.
+            -->
+            <Button
+              v-else-if="!viewOnly"
+              variant="brand"
+              @click.stop="quickAdd(product)"
+            >
+              <ShoppingCart class="size-4" />
+              {{ needsVariantChoice(product) ? t.selectVariant : t.quickAdd }}
+            </Button>
+          </div>
         </div>
       </article>
     </div>
@@ -108,6 +122,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
 import Button from "@/components/ui/Button.vue";
+import ColorSwatches from "@/components/ui/ColorSwatches.vue";
 import {
   Tooltip,
   TooltipContent,
@@ -115,7 +130,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { MerchCopy } from "@/config/merch-copy";
-import { getMaxQuantityForProductId, isGiftCardProductId } from "@/lib/merch-quantity";
+import { markdownToPlainText } from "@/lib/markdown";
+import {
+  getMaxQuantityForProductId,
+  isGiftCardProductId,
+} from "@/lib/merch-quantity";
+import { getImagesForSelection } from "@/lib/product-images";
 import type { Product, StoreLocale } from "@/types/merch";
 
 const props = defineProps<{
@@ -125,16 +145,16 @@ const props = defineProps<{
   cartLines: Array<{
     quantity: number;
     product: {
-      id: string;
+      id?: string;
     };
   }>;
   formatCurrency: Intl.NumberFormat;
   viewOnly?: boolean;
 }>();
 
-defineEmits<{
-  "open-product": [productId: string];
-  "quick-add": [productId: string];
+const emit = defineEmits<{
+  "open-product": [productId: string, initialOptions: Record<string, string>];
+  "quick-add": [productId: string, initialOptions: Record<string, string>];
 }>();
 
 const INITIAL_VISIBLE = 9;
@@ -159,14 +179,68 @@ const loadMore = () => {
   );
 };
 
+// --- Pastilles de couleur --------------------------------------------------
+// La couleur choisie sur une carte change sa photo et suit le produit dans
+// la fiche détaillée.
+const selectedColors = ref<Record<string, string>>({});
+
+const getColorGroup = (product: Product) =>
+  (product.variantGroups ?? []).find((group) => group.type === "color") ?? null;
+
+const getSwatchOptions = (product: Product) =>
+  (getColorGroup(product)?.options ?? []).map((option) => ({
+    id: option.id,
+    label: option.label[props.locale],
+    hex: option.swatchHex ?? "#FFFFFF",
+  }));
+
+const getSelectedColor = (product: Product) =>
+  selectedColors.value[product.id] ??
+  getColorGroup(product)?.options[0]?.id ??
+  null;
+
+const getSelectedColorLabel = (product: Product) => {
+  const selected = getSelectedColor(product);
+  return (
+    getColorGroup(product)?.options.find((option) => option.id === selected)
+      ?.label[props.locale] ?? ""
+  );
+};
+
+const setSelectedColor = (productId: string, colorId: string) => {
+  selectedColors.value = { ...selectedColors.value, [productId]: colorId };
+};
+
+const getInitialOptions = (product: Product): Record<string, string> => {
+  const group = getColorGroup(product);
+  const selected = getSelectedColor(product);
+  return group && selected ? { [group.id]: selected } : {};
+};
+
+// La couleur se choisit sur la carte. Seules les autres options (taille,
+// visuel) obligent à ouvrir la fiche avant d'ajouter au panier.
+const needsVariantChoice = (product: Product) =>
+  (product.variantGroups ?? []).some((group) => group.type !== "color");
+
+const getCardImages = (product: Product) =>
+  getImagesForSelection(product, getInitialOptions(product));
+
+const openProduct = (product: Product) => {
+  emit("open-product", product.id, getInitialOptions(product));
+};
+
+const quickAdd = (product: Product) => {
+  emit("quick-add", product.id, getInitialOptions(product));
+};
+
 const MAX_CARD_DESCRIPTION_LENGTH = 110;
 
-const getCardDescription = (description: string) => {
-  const trimmed = description.trim();
-  if (trimmed.length <= MAX_CARD_DESCRIPTION_LENGTH) {
-    return trimmed;
+const getCardDescription = (product: Product) => {
+  const text = markdownToPlainText(product.description[props.locale]);
+  if (text.length <= MAX_CARD_DESCRIPTION_LENGTH) {
+    return text;
   }
-  return `${trimmed.slice(0, MAX_CARD_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
+  return `${text.slice(0, MAX_CARD_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 };
 
 const isGiftCardProduct = (productId: string) => isGiftCardProductId(productId);

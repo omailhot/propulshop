@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31.59 35.40" role="img" aria-label="Propulso">
+<!-- Tracé vectoriel extrait du PDF « La nouvelle marque Propulso » (novembre 2026).
+     À remplacer par l'export officiel du cahier de normes dès qu'il est disponible.
+     Le wordmark est un dessin: ne pas l'étirer, le recolorer ni retirer la flèche. -->
+  <path fill="#1A1512" fill-rule="evenodd" d="M22.72 0L21.87 1.01L18.7 4.78C18.81 4.78 18.91 4.75 19.03 4.75C22.22 4.75 23.89 6.58 23.89 13.57C23.89 20.72 22.27 24.01 18.11 24.01C17.1 24.01 16.29 23.81 15.48 23.56L15.48 24.32C16.7 25.43 18.47 26.34 21.31 26.34C27.44 26.34 31.59 22.29 31.59 13.17C31.59 5.28 28.65 0.09 22.72 0ZM14.47 31.25L14.47 9.81L8.47 16.93L7.27 18.35L7.27 31.25C7.27 32.46 7.27 33.48 4.58 34.89L4.58 35.4L17.71 35.4L17.71 34.89C14.47 33.48 14.47 32.46 14.47 31.25Z"/>
+  <path fill="#C23E1D" fill-rule="evenodd" d="M0 0.02L7.26 6.31L7.26 15.91L20.66 0L0 0.02Z"/>
+</svg>

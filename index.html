@@ -1,23 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F4EEE6" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
     <title>Shop Propulso</title>
-    <script>
-      (() => {
-        try {
-          const key = "propulshop-theme";
-          const saved = localStorage.getItem(key);
-          const prefersDark = window.matchMedia(
-            "(prefers-color-scheme: dark)",
-          ).matches;
-          const dark = saved ? saved === "dark" : prefersDark;
-          document.documentElement.classList.toggle("dark", dark);
-          document.documentElement.style.colorScheme = dark ? "dark" : "light";
-        } catch {}
-      })();
-    </script>
   </head>
   <body>
     <div id="app"></div>

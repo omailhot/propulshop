@@ -69,6 +69,18 @@ export const resolveOrderProductSelection = (
 	};
 };
 
+const findOptionByOrderProductId = (product: Product, orderProductId: string) => {
+	for (const group of product.variantGroups ?? []) {
+		const option = group.options.find(
+			(candidate) => candidate.orderProductId === orderProductId,
+		);
+		if (option) {
+			return { group, option };
+		}
+	}
+	return null;
+};
+
 export const findProductByOrderProductId = (
 	products: Product[],
 	orderProductId: string,
@@ -79,18 +91,50 @@ export const findProductByOrderProductId = (
 		return exact;
 	}
 
+	const bySelection = products.find((candidate) =>
+		(candidate.variantGroups ?? []).some((group) => {
+			const selectedOptionId = selectedOptions[group.id];
+			return group.options.some(
+				(option) =>
+					option.id === selectedOptionId &&
+					option.orderProductId === orderProductId,
+			);
+		}),
+	);
+	if (bySelection) {
+		return bySelection;
+	}
+
+	// Commande antérieure à la fusion des couleurs: l'article portait alors
+	// son propre identifiant (ex. « black-hoodie ») sans option de couleur.
 	return (
 		products.find((candidate) =>
-			(candidate.variantGroups ?? []).some((group) => {
-				const selectedOptionId = selectedOptions[group.id];
-				return group.options.some(
-					(option) =>
-						option.id === selectedOptionId &&
-						option.orderProductId === orderProductId,
-				);
-			}),
+			Boolean(findOptionByOrderProductId(candidate, orderProductId)),
 		) ?? null
 	);
+};
+
+/**
+ * Complète une sélection avec l'option qu'implique l'identifiant d'article:
+ * « black-hoodie » sur le produit « hoodie » implique `color: black`.
+ * Ne remplace jamais un choix déjà enregistré.
+ */
+export const withImpliedOptions = (
+	product: Product | null,
+	orderProductId: string,
+	selectedOptions: Record<string, string>,
+) => {
+	if (!product) {
+		return selectedOptions;
+	}
+	const implied = findOptionByOrderProductId(product, orderProductId);
+	if (!implied || selectedOptions[implied.group.id]) {
+		return selectedOptions;
+	}
+	return normalizeSelectedOptions({
+		...selectedOptions,
+		[implied.group.id]: implied.option.id,
+	});
 };
 
 export const computeBillableByPerson = (
