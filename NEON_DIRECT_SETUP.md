@@ -36,6 +36,8 @@ VITE_NEON_DATA_API_URL=https://ep-xxx.apirest.c-4.us-east-1.aws.neon.tech/neondb
 
 Run `database/neon-schema.sql` in Neon SQL Editor, then `database/seed-products.sql`.
 
+Then refresh the Data API schema cache: Neon Console > Postgres database > Data API > API tab > "Refresh schema cache". The Data API does not pick up new tables on its own; until the cache is refreshed, requests fail with `PGRST205` ("Could not find the table 'public.products' in the schema cache").
+
 Both scripts can be run again safely: the schema script only adds what is missing, and the seed only refreshes items that were never modified from the admin page (`updated_at = created_at`); it never touches their position or visibility. Deploy the app right after running the schema script: the previous version of the app does not know about editions.
 
 The schema script creates:
