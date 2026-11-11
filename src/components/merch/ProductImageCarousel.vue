@@ -21,7 +21,7 @@
     <template v-if="imageCount > 1">
       <button
         type="button"
-        :class="arrowClass"
+        :class="[arrowClass, quietClass]"
         class="left-2"
         aria-label="Image précédente"
         @click.stop.prevent="goPrevious"
@@ -30,7 +30,7 @@
       </button>
       <button
         type="button"
-        :class="arrowClass"
+        :class="[arrowClass, quietClass]"
         class="right-2"
         aria-label="Image suivante"
         @click.stop.prevent="goNext"
@@ -38,7 +38,7 @@
         <ChevronRight class="size-4" />
       </button>
       <div
-        class="bg-card/90 absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2 py-1"
+        class="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5"
         aria-hidden="true"
       >
         <span
@@ -113,7 +113,15 @@ const props = defineProps<{
   imageGallery?: string[];
   className?: string;
   zoomable?: boolean;
+  /** Flèches masquées jusqu'au survol (cartes du catalogue, sur écran large). */
+  quietControls?: boolean;
 }>();
+
+const quietClass = computed(() =>
+  props.quietControls
+    ? "md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:focus-visible:opacity-100"
+    : "",
+);
 
 const arrowClass =
   "bg-card/90 text-foreground hover:bg-card focus-visible:ring-ring/40 absolute top-1/2 inline-flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full shadow-xs outline-none transition-colors focus-visible:ring-[3px]";

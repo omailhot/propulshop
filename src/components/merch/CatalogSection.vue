@@ -1,84 +1,87 @@
 <template>
-  <section class="animate-fade-up-delay space-y-4">
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+  <section class="animate-fade-up-delay" aria-labelledby="catalog-heading">
+    <!-- Titre, puis les catégories en simples onglets texte. -->
+    <div
+      class="flex flex-col gap-5 border-b sm:flex-row sm:items-end sm:justify-between"
+    >
+      <h2 id="catalog-heading" class="t-h2 pb-0 sm:pb-4">
+        {{ t.catalogTitle }}
+      </h2>
+      <div
+        role="radiogroup"
+        :aria-label="t.categoryFilterLabel"
+        class="-mx-4 -mb-px flex gap-6 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+      >
+        <button
+          v-for="category in availableCategories"
+          :key="category"
+          type="button"
+          role="radio"
+          :aria-checked="activeCategory === category"
+          :class="[
+            'focus-visible:ring-ring/40 shrink-0 cursor-pointer border-b-2 pt-2 pb-4 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px]',
+            activeCategory === category
+              ? 'border-foreground text-foreground font-semibold'
+              : 'text-muted-foreground hover:text-foreground border-transparent',
+          ]"
+          @click="$emit('select-category', category)"
+        >
+          {{ t.categoryLabels[category] }}
+        </button>
+      </div>
+    </div>
+
+    <!--
+      Grille aérée: la photo sur une tuile blanche à plat, deux lignes de
+      texte dessous. Toute la carte ouvre la fiche.
+    -->
+    <div
+      class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:mt-10 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-3"
+    >
       <article
         v-for="product in visibleProducts"
         :key="product.id"
-        class="bg-card focus-visible:ring-ring/40 flex h-full cursor-pointer flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow outline-none hover:shadow-md focus-visible:ring-[3px]"
+        class="group flex cursor-pointer flex-col rounded-lg outline-none"
         tabindex="0"
         @click="openProduct(product)"
-        @keydown.enter.prevent="openProduct(product)"
-        @keydown.space.prevent="openProduct(product)"
+        @keydown.enter.self.prevent="openProduct(product)"
+        @keydown.space.self.prevent="openProduct(product)"
       >
-        <ProductImageCarousel
-          :id="product.id"
-          :alt="product.name[locale]"
-          :image-gallery="getCardImages(product)"
-          class-name="h-72 border-b"
-        />
+        <div
+          class="group-focus-visible:ring-ring/40 overflow-hidden rounded-lg group-focus-visible:ring-[3px]"
+        >
+          <ProductImageCarousel
+            :id="product.id"
+            :alt="product.name[locale]"
+            :image-gallery="getCardImages(product)"
+            quiet-controls
+            class-name="aspect-[4/5] w-full"
+          />
+        </div>
 
-        <div class="flex flex-1 flex-col p-4">
-          <div class="flex items-start justify-between gap-3">
-            <h3 class="min-w-0 text-[15px] leading-snug font-semibold">
+        <div
+          class="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+        >
+          <div class="min-w-0">
+            <h3 class="text-[15px] leading-snug font-semibold">
               {{ product.name[locale] }}
             </h3>
-            <p class="t-num shrink-0 text-right leading-snug font-semibold">
+            <p class="t-num text-muted-foreground mt-0.5 text-[15px] leading-snug">
               {{ formatCurrency.format(product.price) }}
             </p>
           </div>
 
-          <p
-            v-if="getCardDescription(product)"
-            class="text-muted-foreground mt-1.5 text-sm"
-          >
-            {{ getCardDescription(product) }}
-          </p>
-
-          <!-- Un produit, plusieurs couleurs: une pastille par couleur. -->
-          <div
-            v-if="getColorGroup(product)"
-            class="mt-3 flex items-center gap-2.5"
-          >
-            <ColorSwatches
-              size="sm"
-              :label="t.colorLabel"
-              :options="getSwatchOptions(product)"
-              :model-value="getSelectedColor(product)"
-              @update:model-value="
-                (colorId) => setSelectedColor(product.id, colorId)
-              "
-            />
-            <span class="text-muted-foreground text-xs">
-              {{ getSelectedColorLabel(product) }}
-            </span>
-          </div>
-
-          <p
-            v-if="isGiftCardProduct(product.id)"
-            class="text-muted-foreground mt-2 text-xs"
-          >
-            {{ t.giftCardQuantityLimit }}
-          </p>
-
-          <div
-            :class="[
-              'mt-auto grid gap-2 pt-4',
-              viewOnly ? 'grid-cols-1' : 'grid-cols-2',
-            ]"
-          >
-            <Button variant="outline" @click.stop="openProduct(product)">
-              {{ t.viewDetails }}
-            </Button>
-            <TooltipProvider
-              v-if="!viewOnly && isGiftCardLimitReached(product.id)"
-            >
+          <!-- Une action discrète: un lien texte, pas un bouton encadré. -->
+          <template v-if="!viewOnly">
+            <TooltipProvider v-if="isGiftCardLimitReached(product.id)">
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <span class="inline-flex w-full" @click.stop>
-                    <Button variant="brand" class="w-full" disabled @click.stop>
-                      <ShoppingCart class="size-4" />
-                      {{ t.quickAdd }}
-                    </Button>
+                  <span
+                    class="text-muted-foreground shrink-0 cursor-default text-sm"
+                    tabindex="0"
+                    @click.stop
+                  >
+                    {{ t.addedShort }}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent
@@ -90,19 +93,31 @@
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <!--
-              Contour braise, pas de fond plein: le seul bouton plein de
-              l'écran est celui qui mène à la confirmation du panier.
-            -->
-            <Button
-              v-else-if="!viewOnly"
-              variant="brand"
+            <button
+              v-else
+              type="button"
+              class="bg-encre/6 text-foreground hover:bg-encre/12 focus-visible:ring-ring/40 inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px]"
               @click.stop="quickAdd(product)"
             >
-              <ShoppingCart class="size-4" />
-              {{ needsVariantChoice(product) ? t.selectVariant : t.quickAdd }}
-            </Button>
-          </div>
+              {{ needsVariantChoice(product) ? t.selectVariant : t.addShort }}
+            </button>
+          </template>
+        </div>
+
+        <!-- Un produit, plusieurs couleurs: une pastille par couleur. -->
+        <div v-if="getColorGroup(product)" class="mt-3 flex items-center gap-2.5">
+          <ColorSwatches
+            size="sm"
+            :label="t.colorLabel"
+            :options="getSwatchOptions(product)"
+            :model-value="getSelectedColor(product)"
+            @update:model-value="
+              (colorId) => setSelectedColor(product.id, colorId)
+            "
+          />
+          <span class="text-muted-foreground hidden truncate text-xs sm:inline">
+            {{ getSelectedColorLabel(product) }}
+          </span>
         </div>
       </article>
     </div>
@@ -117,11 +132,9 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingCart } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import ProductImageCarousel from "@/components/merch/ProductImageCarousel.vue";
-import Button from "@/components/ui/Button.vue";
 import ColorSwatches from "@/components/ui/ColorSwatches.vue";
 import {
   Tooltip,
@@ -130,44 +143,69 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { MerchCopy } from "@/config/merch-copy";
-import { markdownToPlainText } from "@/lib/markdown";
+import { categoryOrder } from "@/config/merch-store";
 import {
   getMaxQuantityForProductId,
   isGiftCardProductId,
 } from "@/lib/merch-quantity";
 import { getImagesForSelection } from "@/lib/product-images";
-import type { Product, StoreLocale } from "@/types/merch";
+import type { Category, Product, StoreLocale } from "@/types/merch";
 
-const props = defineProps<{
-  t: MerchCopy;
-  locale: StoreLocale;
-  products: Product[];
-  cartLines: Array<{
-    quantity: number;
-    product: {
-      id?: string;
-    };
-  }>;
-  formatCurrency: Intl.NumberFormat;
-  viewOnly?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    t: MerchCopy;
+    locale: StoreLocale;
+    products: Product[];
+    cartLines: Array<{
+      quantity: number;
+      product: {
+        id?: string;
+      };
+    }>;
+    formatCurrency: Intl.NumberFormat;
+    viewOnly?: boolean;
+    activeCategory?: "all" | Category;
+  }>(),
+  { activeCategory: "all" },
+);
 
 const emit = defineEmits<{
   "open-product": [productId: string, initialOptions: Record<string, string>];
   "quick-add": [productId: string, initialOptions: Record<string, string>];
+  "select-category": [category: "all" | Category];
 }>();
 
-const INITIAL_VISIBLE = 9;
-const PAGE_SIZE = 6;
+const INITIAL_VISIBLE = 12;
+const PAGE_SIZE = 9;
 
 const visibleCount = ref(INITIAL_VISIBLE);
 const loadMoreSentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
-const visibleProducts = computed(() =>
-  props.products.slice(0, visibleCount.value),
+// --- Catégories ------------------------------------------------------------
+// Seules les catégories qui contiennent au moins un produit sont proposées.
+const availableCategories = computed(() =>
+  categoryOrder.filter(
+    (category) =>
+      category === "all" ||
+      props.products.some((product) => product.category === category),
+  ),
 );
-const hasMore = computed(() => visibleCount.value < props.products.length);
+
+const filteredProducts = computed(() =>
+  props.activeCategory === "all"
+    ? props.products
+    : props.products.filter(
+        (product) => product.category === props.activeCategory,
+      ),
+);
+
+const visibleProducts = computed(() =>
+  filteredProducts.value.slice(0, visibleCount.value),
+);
+const hasMore = computed(
+  () => visibleCount.value < filteredProducts.value.length,
+);
 
 const loadMore = () => {
   if (!hasMore.value) {
@@ -175,7 +213,7 @@ const loadMore = () => {
   }
   visibleCount.value = Math.min(
     visibleCount.value + PAGE_SIZE,
-    props.products.length,
+    filteredProducts.value.length,
   );
 };
 
@@ -233,23 +271,12 @@ const quickAdd = (product: Product) => {
   emit("quick-add", product.id, getInitialOptions(product));
 };
 
-const MAX_CARD_DESCRIPTION_LENGTH = 110;
-
-const getCardDescription = (product: Product) => {
-  const text = markdownToPlainText(product.description[props.locale]);
-  if (text.length <= MAX_CARD_DESCRIPTION_LENGTH) {
-    return text;
-  }
-  return `${text.slice(0, MAX_CARD_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
-};
-
-const isGiftCardProduct = (productId: string) => isGiftCardProductId(productId);
 const productQuantityInCart = (productId: string) =>
   props.cartLines
     .filter((line) => line.product.id === productId)
     .reduce((total, line) => total + line.quantity, 0);
 const isGiftCardLimitReached = (productId: string) =>
-  isGiftCardProduct(productId) &&
+  isGiftCardProductId(productId) &&
   productQuantityInCart(productId) >= getMaxQuantityForProductId(productId);
 
 const reconnectObserver = () => {
@@ -270,7 +297,7 @@ const reconnectObserver = () => {
 };
 
 watch(
-  () => props.products.length,
+  () => [props.products.length, props.activeCategory] as const,
   () => {
     visibleCount.value = INITIAL_VISIBLE;
     reconnectObserver();

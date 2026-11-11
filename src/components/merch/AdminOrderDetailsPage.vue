@@ -1,12 +1,11 @@
 <template>
   <section>
-    <div class="bg-card rounded-lg border shadow-sm">
+    <div class="bg-card rounded-lg">
       <div
         class="flex flex-col items-start justify-between gap-3 px-5 pt-5 sm:flex-row sm:items-center sm:px-6 sm:pt-6"
       >
         <div>
-          <p class="t-eyebrow">Administration</p>
-          <h1 class="t-h2 mt-2">Détail de la commande</h1>
+          <h1 class="t-h2">Détail de la commande</h1>
           <p class="text-muted-foreground mt-1 text-sm">
             Les articles soumis, avec le fournisseur de chacun.
           </p>

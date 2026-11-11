@@ -2,28 +2,25 @@
   <section
     class="mx-auto flex min-h-[calc(80vh-12rem)] w-full max-w-7xl flex-col items-center justify-center gap-6 px-4"
   >
-    <div class="bg-card w-full max-w-md overflow-hidden rounded-lg border shadow-md">
-      <span class="ruban rounded-none" aria-hidden="true" />
-      <div class="px-6 pt-6 text-center">
-        <span
-          class="bg-vert-pale text-vert mx-auto flex size-11 items-center justify-center rounded-full"
-          aria-hidden="true"
-        >
-          <Check class="size-5" />
-        </span>
-        <h1 class="t-h2 mt-4">{{ t.placedPageTitle }}</h1>
-        <p class="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">
+    <div class="w-full max-w-md">
+      <div class="text-center">
+        <Check class="text-vert mx-auto size-6" aria-hidden="true" />
+        <h1 class="t-h1 mt-4">{{ t.placedPageTitle }}</h1>
+        <p class="text-muted-foreground mx-auto mt-3 max-w-sm text-sm">
           {{ t.placedPageBody }}
         </p>
       </div>
-      <div class="space-y-4 p-6">
-        <div v-if="recapLines.length > 0" class="bg-secondary/60 rounded-md border p-3">
-          <p class="mb-3 text-sm font-semibold">Résumé des articles commandés</p>
-          <ul class="space-y-3 text-sm">
-            <li v-for="line in recapLines" :key="line.id">
+      <div class="mt-10 space-y-8">
+        <div v-if="recapLines.length > 0" class="border-t pt-6">
+          <ul class="divide-y text-sm">
+            <li
+              v-for="line in recapLines"
+              :key="line.id"
+              class="py-4 first:pt-0"
+            >
               <div class="flex items-start gap-3">
                 <div
-                  class="size-12 shrink-0 overflow-hidden rounded-md border bg-white"
+                  class="size-14 shrink-0 overflow-hidden rounded-md bg-white"
                 >
                   <img
                     v-if="getPrimaryImage(line.product, line.selectedOptions)"

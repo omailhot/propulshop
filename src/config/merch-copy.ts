@@ -20,6 +20,29 @@ const DEADLINE_SHORT = {
 	en: formatDeadlineShort("en"),
 };
 
+/*
+ * Tant qu'une valeur est « À déterminer » (null), chaque phrase a une
+ * variante qui le dit clairement plutôt que d'afficher un montant ou une
+ * date inventés.
+ */
+const withCredit = (
+	locale: StoreLocale,
+	known: (credit: string) => string,
+	unknown: string,
+) => {
+	const credit = CREDIT[locale];
+	return credit === null ? unknown : known(credit);
+};
+const withDeadline = (
+	locale: StoreLocale,
+	known: (short: string, long: string) => string,
+	unknown: string,
+) => {
+	const short = DEADLINE_SHORT[locale];
+	const long = DEADLINE[locale];
+	return short === null || long === null ? unknown : known(short, long);
+};
+
 type LocalizedCategoryLabels = Record<"all" | Category, string>;
 
 export type MerchCopy = {
@@ -141,15 +164,21 @@ export type MerchCopy = {
 	welcomeDeadlineLabel: string;
 	welcomeDeadlineNote: string;
 	welcomeFinePrint: string;
-	toConfirm: string;
+	toBeDetermined: string;
 	colorLabel: string;
 	closeLabel: string;
 	creditMeterLabel: string;
+	addShort: string;
+	addedShort: string;
+	openCart: string;
+	signInToOrder: string;
+	categoryFilterLabel: string;
+	creditRemainingShort: string;
 };
 
 export const merchCopy: Record<StoreLocale, MerchCopy> = {
 	en: {
-		appTitle: "Shop Propulso",
+		appTitle: "Propulshop",
 		appSubtitle: EDITION.name.en,
 		landingBadge: "Modern Team Store",
 		landingTitle: "Premium merch experience for every employee",
@@ -193,7 +222,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 			desk: "Desk",
 			travel: "Travel",
 			lifestyle: "Lifestyle",
-			giftcard: "Giftcard",
+			giftcard: "Gift cards",
 		},
 		profileTitle: "User Profile",
 		profileSubtitle: "Manage your account and wallet.",
@@ -208,7 +237,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		creditUsed: "Credit used",
 		creditRemaining: "Credit remaining",
 		creditCommitteeTooltip:
-			`For this ${EDITION.ordinal.en} edition of the Shop Propulso, employees get up to ${CREDIT.en} of store credit for Propulso merch. Any amount above this will be billed when the order is placed.`,
+			withCredit(
+				"en",
+				(credit) =>
+					`For this ${EDITION.ordinal.en} edition of the Propulshop, employees get up to ${credit} of store credit for Propulso merch. Any amount above this will be billed when the order is placed.`,
+				`For this ${EDITION.ordinal.en} edition of the Propulshop, employees get store credit for Propulso merch. The credit amount is still to be determined. Any amount above it will be billed when the order is placed.`,
+			),
 		walletToPay: "From your wallet",
 		settingsTitle: "Settings",
 		settingOrderUpdates: "Order status e-mails",
@@ -244,15 +278,29 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		orderPlacedStatus: "Order was placed on",
 		orderLockedStatus: "Order is locked.",
 		orderUnlockedStatus: "Order is unlocked.",
-		deadlinePassed: `The ${DEADLINE_SHORT.en} deadline has passed. Order is now placed.`,
+		deadlinePassed: withDeadline(
+			"en",
+			(short) => `The ${short} deadline has passed. Order is now placed.`,
+			"The deadline has passed. Order is now placed.",
+		),
 		cannotEditAfterDeadline:
-			`The ${DEADLINE_SHORT.en} deadline has passed. Your order can no longer be modified.`,
+			withDeadline(
+				"en",
+				(short) =>
+					`The ${short} deadline has passed. Your order can no longer be modified.`,
+				"The deadline has passed. Your order can no longer be modified.",
+			),
 		unlockBeforeEditing: "Order is locked. Unlock it before editing.",
 		lockOrder: "Lock order",
 		unlockOrder: "Unlock order",
 		lockExplanationTitle: "Lock-in before deadline",
 		lockExplanationBody:
-			`Lock your order before ${DEADLINE_SHORT.en}. If not locked, your current selection will still be placed automatically on ${DEADLINE_SHORT.en}.`,
+			withDeadline(
+				"en",
+				(short) =>
+					`Lock your order before ${short}. If not locked, your current selection will still be placed automatically on ${short}.`,
+				"Lock your order before the deadline, which is still to be determined.",
+			),
 		lockDeadlineLabel: "Deadline",
 		loggedOutBannerTitle: "Sign in with your @propulso.io e-mail",
 		loggedOutBannerBody:
@@ -261,12 +309,22 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		viewMyOrder: "View my order",
 		placedPageTitle: "Order placed",
 		placedPageBody:
-			`Your order is placed. You can unlock and modify your cart until ${DEADLINE.en}.`,
+			withDeadline(
+				"en",
+				(_short, long) =>
+					`Your order is placed. You can unlock and modify your cart until ${long}.`,
+				"Your order is placed. You can unlock and modify your cart until the deadline, which is still to be determined.",
+			),
 		overwriteOrderPrompt:
 			"Do you want to overwrite your existing order or view it?",
 		overwriteOrderAction: "Overwrite order",
 		policy:
-			`Propulso applies ${CREDIT.en} credit first, then any remaining amount is paid from your personal wallet.`,
+			withCredit(
+				"en",
+				(credit) =>
+					`Propulso applies ${credit} credit first, then any remaining amount is paid from your personal wallet.`,
+				"Propulso applies the social committee credit first (amount to be determined), then any remaining amount is paid from your personal wallet.",
+			),
 		viewOnlyEnable: "Enable read-only mode",
 		viewOnlyDisable: "Disable read-only mode",
 		viewOnlyBadge: "View-only mode enabled",
@@ -281,21 +339,27 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		giftCardLimitReached:
 			"This gift card is already in your cart. Maximum quantity is 1.",
 		welcomeEyebrow: `${EDITION.name.en} · Social committee`,
-		welcomeTitle: "The Shop Propulso",
-		welcomeBody: `The social committee is proud to present the catalog for the ${EDITION.ordinal.en} edition of the Shop Propulso. Listed prices include taxes.`,
+		welcomeTitle: "The Propulshop",
+		welcomeBody: `The social committee is proud to present the catalog for the ${EDITION.ordinal.en} edition of the Propulshop. Listed prices include taxes.`,
 		welcomeCreditLabel: "Credit per employee",
 		welcomeCreditNote: "Valid for this edition only",
 		welcomeDeadlineLabel: "Order deadline",
 		welcomeDeadlineNote: "Lock your order before this date",
 		welcomeFinePrint:
 			"Remaining credit cannot be carried over to the next edition, redeemed for cash or refunded.",
-		toConfirm: "To be confirmed",
+		toBeDetermined: "To be determined",
 		colorLabel: "Color",
 		closeLabel: "Close",
 		creditMeterLabel: "Share of the credit used",
+		addShort: "Add",
+		addedShort: "In cart",
+		openCart: "Open cart",
+		signInToOrder: "Sign in with your @propulso.io account to confirm your order.",
+		categoryFilterLabel: "Filter by category",
+		creditRemainingShort: "Credit left",
 	},
 	fr: {
-		appTitle: "Shop Propulso",
+		appTitle: "Propulshop",
 		appSubtitle: EDITION.name.fr,
 		landingBadge: "Boutique équipe",
 		landingTitle: "Expérience merch premium pour chaque employé",
@@ -341,7 +405,7 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 			desk: "Bureau",
 			travel: "Voyage",
 			lifestyle: "Style de vie",
-			giftcard: "Carte-cadeau"
+			giftcard: "Cartes-cadeaux",
 		},
 		profileTitle: "Profil utilisateur",
 		profileSubtitle: "Gérez votre compte et votre portefeuille.",
@@ -356,7 +420,12 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		creditUsed: "Crédit comité social utilisé",
 		creditRemaining: "Crédit comité social restant",
 		creditCommitteeTooltip:
-			`Pour cette ${EDITION.ordinal.fr} édition du Shop Propulso, nous offrons aux employés jusqu'à ${CREDIT.fr} de crédit magasin pour acheter des produits à l'effigie de Propulso. Le montant excédant sera facturé au moment de la commande.`,
+			withCredit(
+				"fr",
+				(credit) =>
+					`Pour cette ${EDITION.ordinal.fr} édition du Propulshop, nous offrons aux employés jusqu'à ${credit} de crédit magasin pour acheter des produits à l'effigie de Propulso. Le montant excédant sera facturé au moment de la commande.`,
+				`Pour cette ${EDITION.ordinal.fr} édition du Propulshop, nous offrons aux employés un crédit magasin pour acheter des produits à l'effigie de Propulso. Le montant du crédit est à déterminer. Le montant excédant sera facturé au moment de la commande.`,
+			),
 		walletToPay: "Depuis votre portefeuille",
 		settingsTitle: "Paramètres",
 		settingOrderUpdates: "E-mails de statut de commande",
@@ -393,16 +462,31 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		orderLockedStatus: "La commande est verrouillée.",
 		orderUnlockedStatus: "La commande est déverrouillée.",
 		deadlinePassed:
-			`La date limite du ${DEADLINE_SHORT.fr} est passée. La commande est maintenant placée.`,
+			withDeadline(
+				"fr",
+				(short) =>
+					`La date limite du ${short} est passée. La commande est maintenant placée.`,
+				"La date limite est passée. La commande est maintenant placée.",
+			),
 		cannotEditAfterDeadline:
-			`La date limite du ${DEADLINE_SHORT.fr} est passée. La commande ne peut plus être modifiée.`,
+			withDeadline(
+				"fr",
+				(short) =>
+					`La date limite du ${short} est passée. La commande ne peut plus être modifiée.`,
+				"La date limite est passée. La commande ne peut plus être modifiée.",
+			),
 		unlockBeforeEditing:
 			"La commande est verrouillée. Déverrouillez-la pour modifier.",
 		lockOrder: "Verrouiller ma commande",
 		unlockOrder: "Déverrouiller ma commande",
 		lockExplanationTitle: "Verrouillage avant la date limite",
 		lockExplanationBody:
-			`Verrouillez votre commande avant le ${DEADLINE_SHORT.fr}. Si elle n'est pas verrouillée, la sélection actuelle sera quand même placée automatiquement le ${DEADLINE_SHORT.fr}.`,
+			withDeadline(
+				"fr",
+				(short) =>
+					`Verrouillez votre commande avant le ${short}. Si elle n'est pas verrouillée, la sélection actuelle sera quand même placée automatiquement le ${short}.`,
+				"Verrouillez votre commande avant la date limite, qui reste à déterminer.",
+			),
 		lockDeadlineLabel: "Date limite",
 		loggedOutBannerTitle: "Connectez-vous avec votre courriel @propulso.io",
 		loggedOutBannerBody:
@@ -411,12 +495,22 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		viewMyOrder: "Voir ma commande",
 		placedPageTitle: "Commande placée",
 		placedPageBody:
-			`Votre commande est placée. Vous pouvez la déverrouiller et modifier les articles du panier jusqu'au ${DEADLINE.fr}.`,
+			withDeadline(
+				"fr",
+				(_short, long) =>
+					`Votre commande est placée. Vous pouvez la déverrouiller et modifier les articles du panier jusqu'au ${long}.`,
+				"Votre commande est placée. Vous pouvez la déverrouiller et modifier les articles du panier jusqu'à la date limite, qui reste à déterminer.",
+			),
 		overwriteOrderPrompt:
 			"Voulez-vous effacer votre commande existante ou la consulter?",
 		overwriteOrderAction: "Effacer la commande",
 		policy:
-			`Propulso applique d'abord ${CREDIT.fr} de Crédit comité social, puis la balance est payée depuis votre portefeuille personnel.`,
+			withCredit(
+				"fr",
+				(credit) =>
+					`Propulso applique d'abord ${credit} de Crédit comité social, puis la balance est payée depuis votre portefeuille personnel.`,
+				"Propulso applique d'abord le Crédit comité social (montant à déterminer), puis la balance est payée depuis votre portefeuille personnel.",
+			),
 		viewOnlyEnable: "Activer lecture seule",
 		viewOnlyDisable: "Désactiver lecture seule",
 		viewOnlyBadge: "Mode lecture activé",
@@ -432,17 +526,23 @@ export const merchCopy: Record<StoreLocale, MerchCopy> = {
 		giftCardLimitReached:
 			"Cette carte-cadeau est déjà dans votre panier. La quantité maximale est 1.",
 		welcomeEyebrow: `${EDITION.name.fr} · Comité social`,
-		welcomeTitle: "Le Shop Propulso",
-		welcomeBody: `Le comité social est fier de vous présenter le catalogue de la ${EDITION.ordinal.fr} édition du Shop Propulso. Les prix affichés comprennent les taxes.`,
+		welcomeTitle: "Le Propulshop",
+		welcomeBody: `Le comité social est fier de vous présenter le catalogue de la ${EDITION.ordinal.fr} édition du Propulshop. Les prix affichés comprennent les taxes.`,
 		welcomeCreditLabel: "Crédit par employé",
 		welcomeCreditNote: "Utilisable pour cette édition seulement",
 		welcomeDeadlineLabel: "Date limite pour commander",
 		welcomeDeadlineNote: "Verrouillez votre commande avant cette date",
 		welcomeFinePrint:
 			"Le crédit restant est non transférable à la prochaine édition, non monnayable et non remboursable.",
-		toConfirm: "À confirmer",
+		toBeDetermined: "À déterminer",
 		colorLabel: "Couleur",
 		closeLabel: "Fermer",
 		creditMeterLabel: "Part du crédit utilisée",
+		addShort: "Ajouter",
+		addedShort: "Dans le panier",
+		openCart: "Ouvrir le panier",
+		signInToOrder: "Connectez-vous avec votre compte @propulso.io pour confirmer votre commande.",
+		categoryFilterLabel: "Filtrer par catégorie",
+		creditRemainingShort: "Crédit restant",
 	},
 };

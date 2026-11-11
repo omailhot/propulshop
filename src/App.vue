@@ -9,9 +9,17 @@
     :auth-busy="authBusy"
     :connect-google-label="t.connectGoogle"
     :connecting-label="t.connecting"
+    :sign-in-label="t.signIn"
     :sign-out-label="t.logout"
     :admin-label="t.admin"
     :catalog-label="t.backToCatalogShort"
+    :show-credit="currentView === 'catalog' && !isReadOnlyForCurrentUser"
+    :credit-label="t.creditRemainingShort"
+    :credit-remaining-label="
+      CREDIT_IS_SET
+        ? formatCurrency.format(derived.creditRemaining.value)
+        : t.toBeDetermined
+    "
     @connect-google="onConnectGoogle"
     @sign-out="onSignOut"
     @open-admin="onOpenAdmin"
@@ -19,9 +27,37 @@
     @open-home="onBackToCatalog"
   />
 
+  <!--
+    Avis de connexion: une barre pleine largeur, tout en haut, avant
+    l'accueil. C'est la première chose à faire, donc la première chose lue.
+  -->
+  <div
+    v-if="currentView === 'catalog' && !sessionUser && !authBusy"
+    class="bg-card border-b"
+    role="region"
+    :aria-label="t.loggedOutBannerTitle"
+  >
+    <div
+      class="mx-auto flex max-w-6xl flex-col items-start gap-2.5 py-3 pr-32 pl-4 sm:flex-row sm:items-center sm:gap-5 sm:pr-64 sm:pl-8 lg:pr-[22rem]"
+    >
+      <p class="text-foreground text-sm leading-snug">
+        <span class="font-semibold">{{ t.loggedOutBannerTitle }}.</span>
+        <span class="ml-1 hidden sm:inline">{{ t.loggedOutBannerBody }}</span>
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        class="shrink-0"
+        @click="onConnectGoogle"
+      >
+        {{ t.connectGoogle }}
+      </Button>
+    </div>
+  </div>
+
   <!-- Le fond: grège, sans dégradé. Le dégradé ne sert jamais de fond de page. -->
-  <main class="min-h-[calc(100vh-4rem)] overflow-x-clip pb-24 xl:pb-8">
-    <div class="mx-auto max-w-[96rem] min-w-0 px-4 py-6 sm:px-6">
+  <main class="min-h-[calc(100vh-4rem)] overflow-x-clip pb-16">
+    <div class="mx-auto max-w-6xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
       <div v-if="currentView === 'admin'">
         <AdminDashboard
           :t="t"
@@ -36,10 +72,13 @@
           @toggle-view-only="toggleViewOnly"
         />
       </div>
-      <div v-else-if="currentView === 'catalog'">
+      <div
+        v-else-if="currentView === 'catalog'"
+        :class="{ 'lg:pr-80': !isReadOnlyForCurrentUser }"
+      >
         <div
           v-if="isReadOnlyForCurrentUser"
-          class="border-ocre/25 bg-ocre-pale mb-4 flex items-start gap-3 rounded-lg border p-4"
+          class="bg-ocre-pale mb-6 flex items-start gap-3 rounded-lg p-4"
           role="status"
         >
           <Lock class="text-ocre mt-0.5 size-4 shrink-0" />
@@ -49,83 +88,9 @@
           </div>
         </div>
 
-        <!--
-          L'accueil. À gauche le résultat (fond clair, chiffres tabulaires),
-          à droite la matière (dégradé grainé, ondes, un seul moment de verre).
-          Aucun texte ne se pose sur la matière.
-        -->
-        <section
-          class="bg-card animate-fade-up mb-5 grid overflow-hidden rounded-lg border shadow-sm md:grid-cols-[minmax(0,1fr)_17rem] lg:grid-cols-[minmax(0,1fr)_24rem]"
-        >
-          <div class="p-6 sm:p-8">
-            <p class="t-eyebrow">{{ t.welcomeEyebrow }}</p>
-            <h1 class="t-h1 mt-3">{{ t.welcomeTitle }}</h1>
-            <span class="ruban mt-4 w-24" aria-hidden="true" />
-            <p class="t-body text-muted-foreground mt-5">
-              {{ t.welcomeBody }}
-            </p>
-
-            <dl class="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2">
-              <div class="bg-secondary/60 rounded-md border p-4">
-                <dt
-                  class="text-muted-foreground flex items-center justify-between gap-2 text-xs"
-                >
-                  {{ t.welcomeCreditLabel }}
-                  <Badge v-if="EDITION.creditIsPlaceholder" variant="warning">
-                    {{ t.toConfirm }}
-                  </Badge>
-                </dt>
-                <dd class="t-num mt-1 text-2xl font-semibold">
-                  {{ welcomeCredit }}
-                </dd>
-                <dd class="text-muted-foreground mt-0.5 text-xs">
-                  {{ t.welcomeCreditNote }}
-                </dd>
-              </div>
-              <div class="bg-secondary/60 rounded-md border p-4">
-                <dt
-                  class="text-muted-foreground flex items-center justify-between gap-2 text-xs"
-                >
-                  {{ t.welcomeDeadlineLabel }}
-                  <Badge v-if="EDITION.deadlineIsPlaceholder" variant="warning">
-                    {{ t.toConfirm }}
-                  </Badge>
-                </dt>
-                <dd class="t-num mt-1 text-2xl font-semibold">
-                  {{ welcomeDeadline }}
-                </dd>
-                <dd class="text-muted-foreground mt-0.5 text-xs">
-                  {{ t.welcomeDeadlineNote }}
-                </dd>
-              </div>
-            </dl>
-
-            <p class="text-muted-foreground mt-4 max-w-2xl text-xs">
-              {{ t.welcomeFinePrint }}
-            </p>
-          </div>
-          <div class="relative hidden md:block">
-            <BrandMatiere class="absolute inset-0" />
-          </div>
-        </section>
-
-        <div
-          v-if="!sessionUser && !authBusy"
-          class="bg-card mb-4 flex flex-col gap-3 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <p class="font-semibold">{{ t.loggedOutBannerTitle }}</p>
-            <p class="text-muted-foreground mt-0.5 text-sm">
-              {{ t.loggedOutBannerBody }}
-            </p>
-          </div>
-          <Button variant="brand" class="shrink-0" @click="onConnectGoogle">
-            {{ t.connectGoogle }}
-          </Button>
-        </div>
         <div
           v-if="activeOrderConfirmedAt"
-          class="bg-card mb-4 flex flex-col gap-3 rounded-lg border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          class="mb-6 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div class="flex items-start gap-3">
             <span
@@ -150,39 +115,44 @@
             >
               {{ t.unlockOrder }}
             </Button>
-            <Button variant="brand" @click="onOpenDashboard">
+            <Button variant="outline" @click="onOpenDashboard">
               {{ t.viewMyOrder }}
             </Button>
           </div>
         </div>
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
-          <CatalogSection
-            :t="t"
-            :locale="locale"
-            :products="products"
-            :cart-lines="derived.cartLines.value"
-            :format-currency="formatCurrency"
-            :view-only="isReadOnlyForCurrentUser"
-            @open-product="onOpenProduct"
-            @quick-add="onQuickAdd"
-          />
-          <CartSidebar
-            class="hidden xl:block"
-            :t="t"
-            :locale="locale"
-            :cart-lines="derived.cartLines.value"
-            :subtotal="derived.subtotal.value"
-            :credit-used="derived.creditUsed.value"
-            :credit-remaining="derived.creditRemaining.value"
-            :wallet-to-pay="derived.walletToPay.value"
-            :format-currency="formatCurrency"
-            :read-only="!isOrderEditable || isReadOnlyForCurrentUser"
-            @reset-cart="onResetCart"
-            @remove-item="onRemoveCartItem"
-            @update-item-quantity="onUpdateCartItemQuantity"
-            @continue-checkout="onContinueCheckout"
-          />
-        </div>
+        <!-- L'accueil: un titre et une ligne de faits. Rien d'autre. -->
+        <section class="pb-8 sm:pb-10">
+          <h1 class="t-h1">{{ t.welcomeTitle }}</h1>
+          <dl
+            class="text-muted-foreground mt-3 flex flex-wrap gap-x-8 gap-y-1 text-[15px]"
+          >
+            <div class="flex gap-2">
+              <dt>{{ t.welcomeCreditLabel }}</dt>
+              <dd class="t-num text-foreground font-semibold">
+                {{ welcomeCredit ?? t.toBeDetermined }}
+              </dd>
+            </div>
+            <div class="flex gap-2">
+              <dt>{{ t.welcomeDeadlineLabel }}</dt>
+              <dd class="t-num text-foreground font-semibold">
+                {{ welcomeDeadline ?? t.toBeDetermined }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <CatalogSection
+          :t="t"
+          :locale="locale"
+          :products="products"
+          :cart-lines="derived.cartLines.value"
+          :format-currency="formatCurrency"
+          :view-only="isReadOnlyForCurrentUser"
+          :active-category="state.activeCategory.value"
+          @select-category="actions.setActiveCategory"
+          @open-product="onOpenProduct"
+          @quick-add="onQuickAdd"
+        />
       </div>
       <OrderConfirmationPage
         v-else-if="currentView === 'confirmation'"
@@ -243,10 +213,8 @@
     @add-to-cart="onAddToCart"
   />
 
-  <Toaster
-    position="bottom-right"
-    :mobile-offset="{ bottom: '6rem', right: '1rem', left: '1rem' }"
-  />
+  <!-- Les avis vivent en bas, le panier en haut: ils ne se croisent jamais. -->
+  <Toaster position="bottom-right" />
 
   <div
     v-if="showOverwriteModal"
@@ -284,23 +252,126 @@
     </div>
   </div>
 
-  <button
-    v-if="currentView === 'catalog' && !isReadOnlyForCurrentUser"
-    type="button"
-    class="bg-card hover:bg-secondary fixed inset-x-0 bottom-0 z-30 flex min-h-[4.5rem] cursor-pointer items-center justify-between border-t px-4 py-4 shadow-lg transition-colors xl:hidden"
-    @click="actions.setCartOpen(true)"
+  <!--
+    Panier flottant, en haut à droite sous l'en-tête collant. Sur grand
+    écran: un résumé complet (lignes, sous-total, crédit) dans une colonne
+    réservée, pour ne rien couvrir. Ailleurs: une pastille compacte.
+  -->
+  <template
+    v-if="
+      currentView === 'catalog' &&
+      !isReadOnlyForCurrentUser &&
+      !state.cartOpen.value
+    "
   >
-    <div class="flex items-center gap-2">
-      <ShoppingBasket class="size-4" />
-      <span class="font-semibold">{{ t.cartBuilder }}</span>
-      <span class="text-muted-foreground t-num text-sm"
-        >{{ derived.itemCount.value }} {{ t.items }}</span
-      >
+    <button
+      type="button"
+      class="bg-encre text-grege focus-visible:ring-ring/50 fixed top-[4.25rem] right-4 z-30 flex h-12 cursor-pointer items-center gap-4 rounded-full px-5 shadow-lg transition-colors outline-none hover:bg-[#3a312a] focus-visible:ring-[3px] sm:top-20 sm:right-8 lg:hidden"
+      :aria-label="t.openCart"
+      @click="actions.setCartOpen(true)"
+    >
+      <span class="flex items-center gap-2.5 font-semibold">
+        <ShoppingBag class="size-4" />
+        <span class="hidden sm:inline">{{ t.cartBuilder }}</span>
+        <span
+          class="t-num bg-grege text-encre inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs"
+        >
+          {{ derived.itemCount.value }}
+        </span>
+      </span>
+      <span class="t-num font-semibold">{{
+        formatCurrency.format(derived.subtotal.value)
+      }}</span>
+    </button>
+
+    <div
+      class="pointer-events-none fixed inset-x-0 top-20 z-30 hidden lg:block"
+    >
+      <div class="mx-auto flex max-w-6xl justify-end px-8">
+        <aside
+          class="bg-card pointer-events-auto w-72 rounded-lg border p-5 shadow-lg"
+          :aria-label="t.cartBuilder"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="flex items-center gap-2 text-[15px] font-semibold">
+              <ShoppingBag class="size-4" />
+              {{ t.cartBuilder }}
+            </h2>
+            <span
+              class="t-num bg-encre/8 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-semibold"
+            >
+              {{ derived.itemCount.value }}
+            </span>
+          </div>
+
+          <p
+            v-if="derived.cartLines.value.length === 0"
+            class="text-muted-foreground mt-3 text-sm"
+          >
+            {{ t.emptyCart }}
+          </p>
+          <ul
+            v-else
+            class="mt-3 max-h-[30vh] space-y-2 overflow-y-auto text-sm"
+          >
+            <li
+              v-for="line in derived.cartLines.value"
+              :key="line.id"
+              class="flex items-baseline justify-between gap-3"
+            >
+              <span class="min-w-0 truncate">
+                <span class="t-num text-muted-foreground"
+                  >{{ line.quantity }} ×</span
+                >
+                {{ line.product.name[locale] }}
+              </span>
+              <span class="t-num shrink-0">{{
+                formatCurrency.format(line.lineTotal)
+              }}</span>
+            </li>
+          </ul>
+
+          <dl class="mt-4 space-y-1.5 border-t pt-4 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-muted-foreground">{{ t.subtotal }}</dt>
+              <dd class="t-num font-semibold">
+                {{ formatCurrency.format(derived.subtotal.value) }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-muted-foreground">
+                {{ t.creditRemainingShort }}
+              </dt>
+              <dd class="t-num font-semibold">
+                {{
+                  CREDIT_IS_SET
+                    ? formatCurrency.format(derived.creditRemaining.value)
+                    : t.toBeDetermined
+                }}
+              </dd>
+            </div>
+            <div
+              v-if="CREDIT_IS_SET && derived.walletToPay.value > 0"
+              class="flex justify-between gap-3"
+            >
+              <dt class="text-muted-foreground">{{ t.walletToPay }}</dt>
+              <dd class="t-num font-semibold">
+                {{ formatCurrency.format(derived.walletToPay.value) }}
+              </dd>
+            </div>
+          </dl>
+
+          <button
+            type="button"
+            class="bg-encre text-grege focus-visible:ring-ring/50 mt-4 flex h-11 w-full cursor-pointer items-center justify-center rounded-md text-sm font-semibold transition-colors outline-none hover:bg-[#3a312a] focus-visible:ring-[3px]"
+            @click="actions.setCartOpen(true)"
+          >
+            {{ t.openCart }}
+          </button>
+        </aside>
+      </div>
     </div>
-    <span class="t-num font-semibold">{{
-      formatCurrency.format(derived.subtotal.value)
-    }}</span>
-  </button>
+  </template>
 
   <CartDrawer
     :open="state.cartOpen.value"
@@ -322,25 +393,26 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Lock, ShoppingBasket, X } from "lucide-vue-next";
+import { Check, Lock, ShoppingBag, X } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
-import BrandMatiere from "@/components/brand/BrandMatiere.vue";
 import Header from "@/components/Header.vue";
 import AdminDashboard from "@/components/merch/AdminDashboard.vue";
 import AdminOrderDetailsPage from "@/components/merch/AdminOrderDetailsPage.vue";
 import CartDrawer from "@/components/merch/CartDrawer.vue";
-import CartSidebar from "@/components/merch/CartSidebar.vue";
 import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
 import OrderPlacedPage from "@/components/merch/OrderPlacedPage.vue";
 import ProductDetailsModal from "@/components/merch/ProductDetailsModal.vue";
-import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { EDITION, formatCredit, formatDeadlineLong } from "@/config/edition";
 import { merchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT, products } from "@/config/merch-store";
+import {
+  COMPANY_CREDIT,
+  CREDIT_IS_SET,
+  products,
+} from "@/config/merch-store";
 import type { SupplierId } from "@/config/suppliers";
 import { useMerchStore } from "@/hooks/use-merch-store";
 import {
@@ -421,7 +493,7 @@ const activeOrderId = ref<string | null>(null);
 const activeOrderLocked = ref(false);
 const activeOrderPlacedAt = ref<string | null>(null);
 const activeOrderConfirmedAt = ref<string | null>(null);
-const activeOrderLockDeadlineAt = ref<string>(EDITION.orderDeadline);
+const activeOrderLockDeadlineAt = ref<string | null>(EDITION.orderDeadline);
 const isPersistingDraft = ref(false);
 const pendingCartAction = ref<null | (() => void)>(null);
 const adminSelectedOrderId = ref<string | null>(null);
@@ -467,22 +539,30 @@ const activeProductInitialOptions = ref<Record<string, string>>({});
 const welcomeCredit = computed(() => formatCredit(locale.value));
 const welcomeDeadline = computed(() => formatDeadlineLong(locale.value));
 
-const lockDeadlineDate = computed(
-  () => new Date(activeOrderLockDeadlineAt.value),
+// `null` tant que la date limite est à déterminer.
+const lockDeadlineDate = computed(() =>
+  activeOrderLockDeadlineAt.value
+    ? new Date(activeOrderLockDeadlineAt.value)
+    : null,
 );
-const lockDeadlineLabel = computed(() =>
-  lockDeadlineDate.value.toLocaleString(
-    locale.value === "fr" ? "fr-CA" : "en-CA",
-    {
-      dateStyle: "long",
-      timeStyle: "short",
-    },
-  ),
+const lockDeadlineLabel = computed(
+  () =>
+    lockDeadlineDate.value?.toLocaleString(
+      locale.value === "fr" ? "fr-CA" : "en-CA",
+      {
+        dateStyle: "long",
+        timeStyle: "short",
+      },
+    ) ?? t.value.toBeDetermined,
 );
-const isLockDeadlinePassed = computed(
-  () => Date.now() >= lockDeadlineDate.value.getTime(),
+const isLockDeadlinePassed = computed(() =>
+  lockDeadlineDate.value
+    ? Date.now() >= lockDeadlineDate.value.getTime()
+    : false,
 );
-const isOrderEditable = computed(() => Boolean(sessionUser.value));
+// Le panier se remplit sans connexion; la connexion n'est exigée qu'au
+// moment de confirmer la commande (voir requireSignIn).
+const isOrderEditable = computed(() => true);
 const isReadOnlyForCurrentUser = computed(
   () => isViewOnly.value,
 );
@@ -649,6 +729,9 @@ const onUpdateCartItemVariants = (
 
 const onContinueCheckout = () => {
   if (derived.cartLines.value.length === 0) {
+    return;
+  }
+  if (!requireSignIn()) {
     return;
   }
 
@@ -1425,7 +1508,6 @@ const refreshSession = async () => {
     activeOrderLocked.value = false;
     activeOrderPlacedAt.value = null;
     activeOrderConfirmedAt.value = null;
-    actions.replaceCart([]);
     return;
   }
 
@@ -1460,7 +1542,7 @@ const refreshSession = async () => {
   }
 };
 
-const loadCurrentUserOrder = async () => {
+const loadCurrentUserOrder = async (keepLocalCart = false) => {
   if (!sessionUser.value) {
     return;
   }
@@ -1493,7 +1575,13 @@ const loadCurrentUserOrder = async () => {
       creditRemaining: 0,
       walletToPay: 0,
     };
-    actions.replaceCart([]);
+    // Premier chargement après la connexion: un panier rempli avant de se
+    // connecter devient le brouillon de la commande.
+    if (keepLocalCart && derived.cartLines.value.length > 0) {
+      void persistCartDraft();
+    } else {
+      actions.replaceCart([]);
+    }
     return;
   }
 
@@ -1626,12 +1714,18 @@ const loadCurrentUserOrder = async () => {
   }
 };
 
-const ensureOrderEditable = () => {
-  if (!sessionUser.value) {
-    void onConnectGoogle();
-    return false;
+// Le panier est local tant qu'on n'est pas connecté: rien à exiger ici.
+const ensureOrderEditable = () => true;
+
+// Confirmer une commande exige un compte: on envoie vers la connexion
+// Google. Le panier survit à l'aller-retour (sessionStorage).
+const requireSignIn = () => {
+  if (sessionUser.value) {
+    return true;
   }
-  return true;
+  actions.enqueueToast(t.value.signInToOrder);
+  void onConnectGoogle();
+  return false;
 };
 
 const onConnectGoogle = async () => {
@@ -1869,7 +1963,7 @@ const submitOrder = async () => {
     return;
   }
 
-  if (!ensureOrderEditable()) {
+  if (!requireSignIn()) {
     return;
   }
 
@@ -1924,7 +2018,7 @@ onMounted(async () => {
     ) {
       currentView.value = "catalog";
     }
-    await loadCurrentUserOrder();
+    await loadCurrentUserOrder(true);
   } catch (error) {
     console.error(error);
   } finally {

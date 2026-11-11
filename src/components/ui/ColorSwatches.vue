@@ -2,7 +2,7 @@
   <div
     role="radiogroup"
     :aria-label="label"
-    :class="['flex flex-wrap items-center', size === 'sm' ? 'gap-2' : 'gap-3']"
+    :class="['flex flex-wrap items-center', size === 'sm' ? 'gap-2.5' : 'gap-3']"
   >
     <button
       v-for="option in options"
@@ -15,8 +15,8 @@
       :disabled="disabled"
       :class="[
         'relative inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-shadow outline-none disabled:cursor-not-allowed disabled:opacity-50',
-        'ring-offset-card ring-offset-2 focus-visible:ring-[3px]',
-        size === 'sm' ? 'size-5' : 'size-7',
+        'ring-offset-background ring-offset-2 focus-visible:ring-[3px]',
+        size === 'sm' ? 'size-6' : 'size-8',
         option.id === modelValue
           ? 'ring-foreground ring-2'
           : 'hover:ring-input focus-visible:ring-ring/50 hover:ring-2',

@@ -2,8 +2,14 @@ import { EDITION } from "@/config/edition";
 import { buildCatalog, type ParsedProduct } from "@/lib/product-catalog";
 import type { Category, Product } from "@/types/merch";
 
+/**
+ * Le crédit est-il fixé? Tant que non (« À déterminer »), aucun crédit n'est
+ * appliqué et l'interface n'avance aucun montant qui en dépend.
+ */
+export const CREDIT_IS_SET: boolean = EDITION.creditPerEmployee !== null;
+
 /** Crédit offert par employé pour l'édition en cours (voir config/edition.ts). */
-export const COMPANY_CREDIT: number = EDITION.creditPerEmployee;
+export const COMPANY_CREDIT: number = EDITION.creditPerEmployee ?? 0;
 
 export const categoryOrder: Array<"all" | Category> = [
 	"all",

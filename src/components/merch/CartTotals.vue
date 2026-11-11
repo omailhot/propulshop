@@ -3,15 +3,16 @@
     Le résultat: la partie la plus sobre de l'écran. Fond clair, chiffres
     tabulaires, aucune texture.
   -->
-  <div class="bg-secondary/60 rounded-lg border p-4">
+  <div :class="flat ? '' : 'bg-secondary/60 rounded-lg border p-4'">
     <CreditMeter
+      v-if="creditKnown"
       :label="t.creditMeterLabel"
       :credit-used="creditUsed"
       :credit-total="creditTotal"
       :format-currency="formatCurrency"
     />
 
-    <dl class="mt-4 space-y-2 text-sm">
+    <dl :class="['space-y-2 text-sm', creditKnown ? 'mt-4' : '']">
       <div class="flex items-center justify-between gap-3">
         <dt class="text-muted-foreground">{{ t.subtotal }}</dt>
         <dd class="t-num">{{ formatCurrency.format(subtotal) }}</dd>
@@ -23,7 +24,11 @@
             <CircleHelp class="size-3.5" />
           </Tooltip>
         </dt>
-        <dd class="t-num text-vert">
+        <!-- Crédit à déterminer: on l'écrit, on ne calcule rien avec. -->
+        <dd v-if="!creditKnown" class="text-muted-foreground">
+          {{ t.toBeDetermined }}
+        </dd>
+        <dd v-else class="t-num text-vert">
           {{
             creditUsed > 0
               ? `-${formatCurrency.format(creditUsed)}`
@@ -31,7 +36,7 @@
           }}
         </dd>
       </div>
-      <div class="flex items-center justify-between gap-3">
+      <div v-if="creditKnown" class="flex items-center justify-between gap-3">
         <dt class="text-muted-foreground">{{ t.creditRemaining }}</dt>
         <dd class="t-num">{{ formatCurrency.format(creditRemaining) }}</dd>
       </div>
@@ -39,7 +44,10 @@
         class="flex items-center justify-between gap-3 border-t pt-2 text-[15px]"
       >
         <dt class="font-semibold">{{ t.walletToPay }}</dt>
-        <dd class="t-num font-semibold">
+        <dd v-if="!creditKnown" class="font-semibold">
+          {{ t.toBeDetermined }}
+        </dd>
+        <dd v-else class="t-num font-semibold">
           {{ formatCurrency.format(walletToPay) }}
         </dd>
       </div>
@@ -69,7 +77,7 @@ import CreditMeter from "@/components/merch/CreditMeter.vue";
 import Button from "@/components/ui/Button.vue";
 import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT } from "@/config/merch-store";
+import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 
 withDefaults(
   defineProps<{
@@ -83,8 +91,18 @@ withDefaults(
     readOnly?: boolean;
     showHint?: boolean;
     creditTotal?: number;
+    /** `false` tant que le montant du crédit est à déterminer. */
+    creditKnown?: boolean;
+    /** Sans cadre: quand le parent fournit déjà la surface (tiroir du panier). */
+    flat?: boolean;
   }>(),
-  { readOnly: false, showHint: false, creditTotal: COMPANY_CREDIT },
+  {
+    readOnly: false,
+    showHint: false,
+    creditTotal: COMPANY_CREDIT,
+    creditKnown: CREDIT_IS_SET,
+    flat: false,
+  },
 );
 
 defineEmits<{

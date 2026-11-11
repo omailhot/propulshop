@@ -1,11 +1,8 @@
 <template>
   <section class="space-y-4">
-    <div>
-      <p class="t-eyebrow">Administration</p>
-      <h1 class="t-h2 mt-2">Commandes de l'édition</h1>
-    </div>
+    <h1 class="t-h1 pt-4 pb-2">Commandes de l'édition</h1>
 
-    <div class="bg-card rounded-lg border shadow-sm">
+    <div class="bg-card rounded-lg">
       <div
         class="flex flex-col items-stretch justify-between gap-3 border-b px-4 pt-3 sm:flex-row sm:items-end sm:px-6"
       >
@@ -28,7 +25,7 @@
             {{ tab.label }}
             <span
               v-if="activeTab === tab.id"
-              class="ruban absolute inset-x-0 -bottom-px h-[3px]"
+              class="bg-foreground absolute inset-x-0 -bottom-px h-0.5"
               aria-hidden="true"
             />
           </button>
@@ -108,7 +105,11 @@
                   {{ formatSubtotal(order.total_per_person) }}
                 </td>
                 <td class="t-num py-2.5 pr-3 text-right">
-                  {{ formatSubtotal(order.billable_per_person) }}
+                  {{
+                    creditKnown
+                      ? formatSubtotal(order.billable_per_person)
+                      : TO_BE_DETERMINED
+                  }}
                 </td>
                 <td class="py-2.5 pr-3">
                   <Badge :variant="order.is_locked ? 'success' : 'warning'">
@@ -250,12 +251,12 @@
 
         <dl
           v-if="activeTab === 'items' && !error && !loading"
-          class="bg-secondary/60 mt-5 grid gap-4 rounded-lg border p-4 sm:grid-cols-3"
+          class="mt-6 grid gap-4 border-t pt-5 sm:grid-cols-3"
         >
           <div>
             <dt class="text-muted-foreground text-xs">Budget initial</dt>
             <dd class="t-num mt-0.5 text-xl font-semibold">
-              {{ formatSubtotal(initialBudget) }}
+              {{ creditKnown ? formatSubtotal(initialBudget) : TO_BE_DETERMINED }}
             </dd>
           </div>
           <div>
@@ -266,9 +267,13 @@
           </div>
           <div>
             <dt class="text-muted-foreground text-xs">
-              {{ budgetDelta >= 0 ? "Restant" : "Dépassement" }}
+              {{ !creditKnown || budgetDelta >= 0 ? "Restant" : "Dépassement" }}
             </dt>
+            <dd v-if="!creditKnown" class="mt-0.5 text-xl font-semibold">
+              {{ TO_BE_DETERMINED }}
+            </dd>
             <dd
+              v-else
               :class="[
                 't-num mt-0.5 text-xl font-semibold',
                 budgetDelta < 0 ? 'text-bordeaux' : 'text-vert',
@@ -282,7 +287,7 @@
     </div>
 
     <div
-      class="border-bordeaux/25 bg-bordeaux-pale flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+      class="flex flex-col gap-3 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
         <p class="font-semibold">Mode lecture seule global</p>
@@ -375,7 +380,7 @@ import { computed, ref } from "vue";
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT } from "@/config/merch-store";
+import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 import {
   getSupplierName,
   SUPPLIER_IDS,
@@ -396,6 +401,11 @@ type ItemSummary = {
 type SupplierFilter = "all" | SupplierId | "unspecified";
 
 const UNSPECIFIED_DOT = "var(--p-encre-3)";
+
+// Tant que le crédit est à déterminer, ni le budget ni la part facturable
+// ne peuvent être calculés.
+const creditKnown = CREDIT_IS_SET;
+const TO_BE_DETERMINED = "À déterminer";
 
 const props = defineProps<{
   t: MerchCopy;

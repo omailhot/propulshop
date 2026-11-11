@@ -21,19 +21,23 @@
           :alt="product.name[locale]"
           :image-gallery="variantImageGallery"
           :zoomable="true"
-          class-name="h-[22rem] rounded-lg border md:h-[30rem]"
+          class-name="h-64 rounded-lg sm:h-[22rem] md:h-[30rem]"
         />
 
         <div
-          class="bg-card flex max-h-[70vh] min-h-0 flex-col rounded-lg border shadow-sm"
+          class="flex min-h-0 flex-col md:max-h-[70vh]"
         >
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+          <div
+            class="min-h-0 flex-1 space-y-6 px-1 pb-5 md:overflow-y-auto md:px-4"
+          >
             <div>
-              <p class="t-eyebrow">{{ t.categoryLabels[product.category] }}</p>
-              <h2 class="t-h3 mt-2 font-semibold">
+              <p class="text-muted-foreground text-sm">
+                {{ t.categoryLabels[product.category] }}
+              </p>
+              <h2 class="t-h2 mt-1">
                 {{ product.name[locale] }}
               </h2>
-              <p class="t-num mt-2 text-xl font-semibold">
+              <p class="t-num text-muted-foreground mt-2 text-lg">
                 {{ formatCurrency.format(unitPrice) }}
               </p>
               <div
@@ -108,7 +112,7 @@
           </div>
 
           <div
-            class="border-t p-4"
+            class="bg-background sticky bottom-0 border-t px-1 pt-4 md:static md:px-4"
             style="
               padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
             "

@@ -1,13 +1,12 @@
 <template>
-  <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
-    <div class="bg-card rounded-lg border shadow-sm">
-      <div class="px-5 pt-5 sm:px-6 sm:pt-6">
-        <p class="t-eyebrow">{{ t.reviewTitle }}</p>
-        <h1 class="t-h2 mt-2">{{ t.itemsToOrder }}</h1>
-        <p class="text-muted-foreground mt-1 text-sm">{{ t.reviewSubtitle }}</p>
+  <section class="grid gap-12 pt-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <div>
+      <div>
+        <h1 class="t-h1">{{ t.itemsToOrder }}</h1>
+        <p class="text-muted-foreground mt-2 text-sm">{{ t.reviewSubtitle }}</p>
       </div>
 
-      <div class="p-5 sm:p-6">
+      <div class="mt-8 border-t pt-6">
         <div
           v-if="cartLines.length === 0"
           class="border-input rounded-lg border border-dashed p-6 text-center"
@@ -16,15 +15,15 @@
           <p class="text-muted-foreground text-sm">{{ t.addFromCatalog }}</p>
         </div>
 
-        <ul v-else class="space-y-3">
+        <ul v-else class="divide-y">
           <li
             v-for="line in cartLines"
             :key="line.id"
-            class="rounded-lg border p-4"
+            class="py-6 first:pt-0"
           >
             <div class="flex items-start gap-4">
               <div
-                class="size-20 shrink-0 overflow-hidden rounded-md border bg-white"
+                class="size-24 shrink-0 overflow-hidden rounded-md bg-white"
               >
                 <img
                   v-if="getPrimaryImage(line.product, line.selectedOptions)"
@@ -138,17 +137,18 @@
       </div>
     </div>
 
-    <aside class="xl:sticky xl:top-24 xl:self-start">
-      <div class="bg-card rounded-lg border shadow-md">
-        <div class="px-5 pt-5">
-          <h2 class="t-h3 font-semibold">{{ t.confirmationTitle }}</h2>
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+      <div class="bg-card rounded-lg">
+        <div class="px-6 pt-6">
+          <h2 class="t-h3">{{ t.confirmationTitle }}</h2>
           <p class="text-muted-foreground mt-2 text-sm">
             {{ t.confirmationText }}
           </p>
         </div>
 
-        <div class="space-y-4 p-5">
+        <div class="space-y-5 p-6">
           <CreditMeter
+            v-if="creditKnown"
             :label="t.creditMeterLabel"
             :credit-used="creditUsed"
             :credit-total="creditTotal"
@@ -167,7 +167,11 @@
                   <CircleHelp class="size-3.5" />
                 </Tooltip>
               </dt>
-              <dd class="t-num text-vert">
+              <!-- Crédit à déterminer: on l'écrit, on ne calcule rien avec. -->
+              <dd v-if="!creditKnown" class="text-muted-foreground">
+                {{ t.toBeDetermined }}
+              </dd>
+              <dd v-else class="t-num text-vert">
                 {{
                   creditUsed > 0
                     ? `-${formatCurrency.format(creditUsed)}`
@@ -175,7 +179,10 @@
                 }}
               </dd>
             </div>
-            <div class="flex items-center justify-between gap-3">
+            <div
+              v-if="creditKnown"
+              class="flex items-center justify-between gap-3"
+            >
               <dt class="text-muted-foreground">{{ t.creditRemaining }}</dt>
               <dd class="t-num">{{ formatCurrency.format(creditRemaining) }}</dd>
             </div>
@@ -183,16 +190,18 @@
               class="flex items-center justify-between gap-3 border-t pt-2 text-[15px]"
             >
               <dt class="font-semibold">{{ t.invoiceLater }}</dt>
-              <dd class="t-num font-semibold">
+              <dd v-if="!creditKnown" class="font-semibold">
+                {{ t.toBeDetermined }}
+              </dd>
+              <dd v-else class="t-num font-semibold">
                 {{ formatCurrency.format(walletToPay) }}
               </dd>
             </div>
           </dl>
 
-          <div class="bg-ocre-pale flex items-start gap-2 rounded-md p-3 text-sm">
-            <AlertTriangle class="text-ocre mt-0.5 size-4 shrink-0" />
-            <span>{{ t.invoiceExplanation }}</span>
-          </div>
+          <p class="text-muted-foreground text-xs">
+            {{ t.invoiceExplanation }} {{ t.welcomeFinePrint }}
+          </p>
 
           <div class="grid gap-2">
             <!-- Le seul bouton plein de l'écran: verrouiller la commande. -->
@@ -227,7 +236,6 @@
 
 <script setup lang="ts">
 import {
-  AlertTriangle,
   ArrowLeft,
   CircleHelp,
   Lock,
@@ -242,7 +250,7 @@ import ColorSwatches from "@/components/ui/ColorSwatches.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT } from "@/config/merch-store";
+import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 import {
   getMaxQuantityForProductId,
   isGiftCardProductId,
@@ -277,8 +285,10 @@ const props = withDefaults(
     backLabel?: string;
     showLockToggle?: boolean;
     creditTotal?: number;
+    /** `false` tant que le montant du crédit est à déterminer. */
+    creditKnown?: boolean;
   }>(),
-  { creditTotal: COMPANY_CREDIT },
+  { creditTotal: COMPANY_CREDIT, creditKnown: CREDIT_IS_SET },
 );
 
 const emit = defineEmits<{

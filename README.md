@@ -1,4 +1,4 @@
-# Shop Propulso, deuxième édition
+# Propulshop, deuxième édition
 
 Boutique interne des employés, à la charte du livre de marque (édition 1, novembre 2026).
 

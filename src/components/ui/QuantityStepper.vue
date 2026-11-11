@@ -4,7 +4,7 @@
   >
     <button
       type="button"
-      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
+      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-9 cursor-pointer sm:size-8 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
       :disabled="disabled || value <= min"
       aria-label="Diminuer la quantité"
       @click="decrease"
@@ -16,7 +16,7 @@
 
     <button
       type="button"
-      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
+      class="text-foreground hover:bg-accent focus-visible:ring-ring/40 inline-flex size-9 cursor-pointer sm:size-8 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35"
       :disabled="disabled || value >= max"
       aria-label="Augmenter la quantité"
       @click="increase"

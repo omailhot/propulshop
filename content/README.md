@@ -1,4 +1,4 @@
-# Catalogue du Shop Propulso
+# Catalogue du Propulshop
 
 Un fichier markdown par produit, dans `content/products/`. Le nom du fichier
 sert d'identifiant (`hoodie.md` devient le produit `hoodie`).

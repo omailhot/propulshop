@@ -1,5 +1,5 @@
 /**
- * Fournisseurs du Shop Propulso.
+ * Fournisseurs du Propulshop.
  *
  * Chaque produit (content/products/*.md) déclare son fournisseur avec la clé
  * `supplier`. Le mode admin s'en sert pour séparer le résumé de la commande
