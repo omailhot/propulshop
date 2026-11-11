@@ -1,8 +1,8 @@
+import { resolveImageSrc } from "@/lib/image-store";
 import type { ProductImage } from "@/types/merch";
 
 type WithImages = {
 	images?: ProductImage[];
-	imageGallery?: string[];
 };
 
 /**
@@ -19,7 +19,7 @@ export function getImagesForSelection(
 ): string[] {
 	const images = product.images;
 	if (!images || images.length === 0) {
-		return product.imageGallery ?? [];
+		return [];
 	}
 
 	const ranked = images
@@ -41,9 +41,9 @@ export function getImagesForSelection(
 		.sort((left, right) => right.score - left.score || left.index - right.index);
 
 	if (ranked.length === 0) {
-		return images.map((image) => image.src);
+		return images.map((image) => resolveImageSrc(image.src));
 	}
-	return ranked.map((entry) => entry.src);
+	return ranked.map((entry) => resolveImageSrc(entry.src));
 }
 
 export const getPrimaryImage = (

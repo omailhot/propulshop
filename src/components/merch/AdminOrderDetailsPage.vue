@@ -7,7 +7,11 @@
         <div>
           <h1 class="t-h2">Détail de la commande</h1>
           <p class="text-muted-foreground mt-1 text-sm">
-            Les articles soumis, avec le fournisseur de chacun.
+            {{
+              hasSuppliers
+                ? "Les articles soumis, avec le fournisseur de chacun."
+                : "Les articles soumis."
+            }}
           </p>
         </div>
         <Button variant="outline" @click="$emit('back')">
@@ -59,10 +63,19 @@
                   <p class="text-muted-foreground t-num mt-0.5 text-xs">
                     {{ t.quantity }}: {{ line.quantity }}
                   </p>
-                  <Badge variant="outline" class="mt-2 gap-1.5">
+                  <Badge
+                    v-if="hasSuppliers"
+                    variant="outline"
+                    class="mt-2 gap-1.5"
+                  >
                     <span
                       class="size-2 rounded-full"
-                      :style="{ backgroundColor: getSupplierDot(line) }"
+                      :style="{
+                        backgroundColor: getSupplierDot(
+                          line.product.supplier,
+                          suppliers,
+                        ),
+                      }"
                       aria-hidden="true"
                     />
                     {{ getSupplierName(line.product.supplier) }}
@@ -87,7 +100,7 @@ import VariantChips from "@/components/merch/VariantChips.vue";
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { getSupplierName, SUPPLIERS } from "@/config/suppliers";
+import { getSupplierDot, getSupplierName } from "@/config/suppliers";
 import { getPrimaryImage } from "@/lib/product-images";
 import { getVariantChips } from "@/lib/variant-labels";
 import type { CartLineView, StoreLocale } from "@/types/merch";
@@ -97,14 +110,11 @@ defineProps<{
   locale: StoreLocale;
   cartLines: CartLineView[];
   formatCurrency: Intl.NumberFormat;
+  suppliers: string[];
+  hasSuppliers: boolean;
 }>();
 
 defineEmits<{
   back: [];
 }>();
-
-const getSupplierDot = (line: CartLineView) =>
-  line.product.supplier
-    ? SUPPLIERS[line.product.supplier].dot
-    : "var(--p-encre-3)";
 </script>

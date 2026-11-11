@@ -1,14 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import {
-	EDITION,
-	formatCredit,
+	type Edition,
 	formatCreditAmount,
 	formatDeadlineDate,
-	formatDeadlineLong,
+	getEditionName,
+	getEditionOrdinal,
+	isDeadlinePassed,
+	PENDING_EDITION,
+	toDeadlineDateInput,
+	toDeadlineIso,
 } from "@/config/edition";
-import { merchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
+import { createMerchCopy } from "@/config/merch-copy";
+
+const setEdition: Edition = {
+	number: 2,
+	creditPerEmployee: 200,
+	orderDeadline: "2026-12-15T23:59:59-05:00",
+	hasSuppliers: true,
+	isOpen: true,
+};
 
 describe("formatCreditAmount", () => {
 	it("formats a set amount without cents", () => {
@@ -42,36 +53,80 @@ describe("formatDeadlineDate", () => {
 	});
 });
 
-describe("the current edition", () => {
-	it("never applies a credit that is not set", () => {
-		if (EDITION.creditPerEmployee === null) {
-			expect(CREDIT_IS_SET).toBe(false);
-			expect(COMPANY_CREDIT).toBe(0);
-			expect(formatCredit("fr")).toBeNull();
-			expect(merchCopy.fr.policy).toContain("à déterminer");
-			expect(merchCopy.fr.creditCommitteeTooltip).toContain("à déterminer");
-		} else {
-			expect(CREDIT_IS_SET).toBe(true);
-			expect(COMPANY_CREDIT).toBe(EDITION.creditPerEmployee);
-			expect(merchCopy.fr.policy).toContain(formatCredit("fr"));
-		}
+describe("edition names", () => {
+	it("writes the ordinal in both languages", () => {
+		expect(getEditionName(2, "fr")).toBe("Deuxième édition");
+		expect(getEditionName(2, "en")).toBe("Second edition");
+		expect(getEditionOrdinal(3, "fr")).toBe("troisième");
 	});
 
-	it("never prints a deadline that is not set", () => {
-		if (EDITION.orderDeadline === null) {
-			expect(formatDeadlineLong("fr")).toBeNull();
-			expect(merchCopy.fr.placedPageBody).toContain("à déterminer");
-			expect(merchCopy.fr.placedPageBody).not.toMatch(/null|undefined/);
-		} else {
-			expect(merchCopy.fr.placedPageBody).toContain(formatDeadlineLong("fr"));
-		}
+	it("falls back to the number past the known ordinals", () => {
+		expect(getEditionOrdinal(11, "fr")).toBe("11e");
+	});
+});
+
+describe("the deadline date field", () => {
+	it("turns a date into the end of that day in Montréal", () => {
+		expect(toDeadlineIso("2026-12-15")).toBe("2026-12-16T04:59:59.000Z");
+		expect(toDeadlineIso("2027-07-01")).toBe("2027-07-02T03:59:59.000Z");
+	});
+
+	it("reads the Montréal date back from a deadline", () => {
+		expect(toDeadlineDateInput("2026-12-16T04:59:59.000Z")).toBe("2026-12-15");
+		expect(toDeadlineDateInput(toDeadlineIso("2027-07-01"))).toBe("2027-07-01");
+	});
+
+	it("treats an empty field as to be determined", () => {
+		expect(toDeadlineIso("")).toBeNull();
+		expect(toDeadlineDateInput(null)).toBe("");
+	});
+});
+
+describe("isDeadlinePassed", () => {
+	it("is never passed while the deadline is to be determined", () => {
+		expect(isDeadlinePassed(PENDING_EDITION)).toBe(false);
+	});
+
+	it("compares a set deadline with now", () => {
+		expect(
+			isDeadlinePassed({
+				...setEdition,
+				orderDeadline: "2020-01-01T00:00:00Z",
+			}),
+		).toBe(true);
+		expect(
+			isDeadlinePassed({
+				...setEdition,
+				orderDeadline: "2999-01-01T00:00:00Z",
+			}),
+		).toBe(false);
+	});
+});
+
+describe("the texts of an edition", () => {
+	it("never applies a credit or prints a deadline that is not set", () => {
+		const copy = createMerchCopy(PENDING_EDITION).fr;
+		expect(copy.policy).toContain("à déterminer");
+		expect(copy.creditCommitteeTooltip).toContain("à déterminer");
+		expect(copy.placedPageBody).toContain("à déterminer");
+	});
+
+	it("writes the credit and the deadline once they are set", () => {
+		const copy = createMerchCopy(setEdition).fr;
+		expect(copy.policy.replace(/\s/g, " ")).toContain("200 $");
+		expect(copy.placedPageBody).toContain("15 décembre 2026");
+		expect(copy.appSubtitle).toBe("Deuxième édition");
 	});
 
 	it("leaves no raw null in any text", () => {
-		for (const locale of ["fr", "en"] as const) {
-			for (const [key, value] of Object.entries(merchCopy[locale])) {
-				if (typeof value === "string") {
-					expect(value, `${locale}.${key}`).not.toMatch(/\bnull\b|undefined/);
+		for (const edition of [PENDING_EDITION, setEdition]) {
+			for (const locale of ["fr", "en"] as const) {
+				for (const [key, value] of Object.entries(
+					createMerchCopy(edition)[locale],
+				)) {
+					if (typeof value === "string") {
+						expect(value, `${locale}.${key}`).not.toMatch(/\bnull\b|undefined/);
+					}
 				}
 			}
 		}

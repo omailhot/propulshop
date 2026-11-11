@@ -1,6 +1,18 @@
 <template>
   <section class="space-y-4">
-    <h1 class="t-h1 pt-4 pb-2">Commandes de l'édition</h1>
+    <div
+      class="flex flex-col gap-3 pt-4 pb-2 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <h1 class="t-h1">Commandes de l'édition</h1>
+
+      <SegmentedControl
+        class="self-start"
+        label="Choisir l'édition"
+        :options="editionOptions"
+        :model-value="edition.number"
+        @update:model-value="selectEdition"
+      />
+    </div>
 
     <div class="bg-card rounded-lg">
       <div
@@ -15,7 +27,7 @@
             role="tab"
             :aria-selected="activeTab === tab.id"
             :class="[
-              'focus-visible:ring-ring/40 relative cursor-pointer rounded-t-md pt-2 pb-3 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px]',
+              'focus-visible:ring-ring/40 relative cursor-pointer rounded-t-md pt-2 pb-3 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px]',
               activeTab === tab.id
                 ? 'text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
@@ -41,6 +53,29 @@
             <Download class="size-4" />
             {{ exportLabel }}
           </Button>
+
+          <template v-if="activeTab === 'users'">
+            <Button
+              size="sm"
+              variant="outline"
+              :disabled="usersWithoutOrder.length === 0"
+              @click="copyUserEmails"
+            >
+              <Copy class="size-4" />
+              Copier les courriels
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              :disabled="usersWithoutOrder.length === 0"
+              @click="exportUsersCsv"
+            >
+              <Download class="size-4" />
+              Export CSV
+            </Button>
+          </template>
+
           <Button size="sm" variant="outline" @click="$emit('refresh')">
             <RefreshCw class="size-4" />
             Rafraîchir
@@ -62,7 +97,7 @@
 
         <!-- ================= Commandes ================= -->
         <p
-          v-else-if="activeTab === 'orders' && orders.length === 0"
+          v-else-if="activeTab === 'orders' && editionOrders.length === 0"
           class="text-muted-foreground text-sm"
         >
           Aucune commande.
@@ -80,14 +115,14 @@
                 <th class="py-2 pr-3 text-right font-semibold">
                   {{ t.billablePerPerson }}
                 </th>
-                <th class="py-2 pr-3 font-semibold">Verrouillée</th>
+                <th class="py-2 pr-3 font-semibold">Statut</th>
                 <th class="py-2 font-semibold">Date</th>
                 <th class="py-2 pl-3 text-right font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="order in orders"
+                v-for="order in editionOrders"
                 :key="order.id"
                 class="hover:bg-secondary/60 focus-visible:bg-secondary/60 cursor-pointer border-t transition-colors outline-none"
                 role="button"
@@ -112,8 +147,8 @@
                   }}
                 </td>
                 <td class="py-2.5 pr-3">
-                  <Badge :variant="order.is_locked ? 'success' : 'warning'">
-                    {{ order.is_locked ? "Oui" : "Non" }}
+                  <Badge :variant="order.is_placed ? 'success' : 'warning'">
+                    {{ order.is_placed ? "Placée" : "Brouillon" }}
                   </Badge>
                 </td>
                 <td class="text-muted-foreground t-num py-2.5">
@@ -134,9 +169,61 @@
           </table>
         </div>
 
+        <div v-else-if="activeTab === 'users'">
+          <p class="text-muted-foreground text-sm">
+            Les employés sans commande placée pour cette édition. Seuls ceux
+            qui se sont connectés au moins une fois apparaissent.
+          </p>
+
+          <p
+            v-if="usersWithoutOrder.length === 0"
+            class="text-muted-foreground mt-4 text-sm"
+          >
+            Tout le monde a placé sa commande.
+          </p>
+
+          <div v-else class="mt-4 overflow-auto">
+            <table class="w-full min-w-[40rem] text-sm">
+              <thead>
+                <tr class="text-muted-foreground text-left text-xs">
+                  <th class="py-2 pr-3 font-semibold">Nom</th>
+                  <th class="py-2 pr-3 font-semibold">Courriel</th>
+                  <th class="py-2 pr-3 font-semibold">Statut</th>
+                  <th class="py-2 font-semibold">Dernière visite</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="user in usersWithoutOrder"
+                  :key="user.user_id"
+                  class="border-t"
+                >
+                  <td class="py-2.5 pr-3 font-semibold">
+                    {{ user.display_name }}
+                  </td>
+                  <td class="text-muted-foreground py-2.5 pr-3">
+                    {{ user.email }}
+                  </td>
+                  <td class="py-2.5 pr-3">
+                    <Badge :variant="user.has_draft ? 'warning' : 'secondary'">
+                      {{ user.has_draft ? "Brouillon" : "Aucune commande" }}
+                    </Badge>
+                  </td>
+                  <td class="text-muted-foreground t-num py-2.5">
+                    {{
+                      user.last_seen_at ? formatDateTime(user.last_seen_at) : "-"
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ============ Résumé de la commande, par fournisseur ============ -->
         <p
-          v-else-if="itemsSummary.length === 0"
+          v-else-if="editionItems.length === 0"
           class="text-muted-foreground text-sm"
         >
           Aucun article à agréger.
@@ -150,44 +237,25 @@
                 Résumé de la commande
               </h2>
               <p class="text-muted-foreground text-sm">
-                Les articles à commander, séparés par fournisseur.
+                {{
+                  edition.hasSuppliers
+                    ? "Les articles des commandes placées, séparés par fournisseur."
+                    : "Les articles des commandes placées."
+                }}
               </p>
             </div>
-            <div
-              role="radiogroup"
-              aria-label="Filtrer par fournisseur"
-              class="bg-secondary inline-flex flex-wrap gap-1 self-start rounded-md p-1"
-            >
-              <button
-                v-for="filter in supplierFilters"
-                :key="filter.id"
-                type="button"
-                role="radio"
-                :aria-checked="supplierFilter === filter.id"
-                :class="[
-                  'focus-visible:ring-ring/40 inline-flex cursor-pointer items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px]',
-                  supplierFilter === filter.id
-                    ? 'bg-card text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground',
-                ]"
-                @click="supplierFilter = filter.id"
-              >
-                <span
-                  v-if="filter.dot"
-                  class="size-2 rounded-full"
-                  :style="{ backgroundColor: filter.dot }"
-                  aria-hidden="true"
-                />
-                {{ filter.label }}
-                <span class="t-num text-muted-foreground font-normal">
-                  {{ filter.quantity }}
-                </span>
-              </button>
-            </div>
+
+            <SegmentedControl
+              v-if="edition.hasSuppliers"
+              v-model="supplierFilter"
+              class="self-start"
+              label="Filtrer par fournisseur"
+              :options="supplierFilters"
+            />
           </div>
 
           <p
-            v-if="unspecifiedQuantity > 0"
+            v-if="edition.hasSuppliers && unspecifiedQuantity > 0"
             class="bg-ocre-pale mt-3 flex items-start gap-2 rounded-md p-3 text-sm"
             role="status"
           >
@@ -203,7 +271,9 @@
             <table class="w-full min-w-[46rem] text-sm">
               <thead>
                 <tr class="text-muted-foreground text-left text-xs">
-                  <th class="py-2 pr-3 font-semibold">Fournisseur</th>
+                  <th v-if="edition.hasSuppliers" class="py-2 pr-3 font-semibold">
+                    Fournisseur
+                  </th>
                   <th class="py-2 pr-3 font-semibold">Article</th>
                   <th class="py-2 pr-3 font-semibold">Variantes</th>
                   <th class="py-2 pr-3 text-right font-semibold">Quantité</th>
@@ -211,7 +281,7 @@
                 </tr>
               </thead>
               <tbody v-for="group in groupedItems" :key="group.id">
-                <tr class="bg-secondary/60 border-t">
+                <tr v-if="edition.hasSuppliers" class="bg-secondary/60 border-t">
                   <th
                     colspan="3"
                     scope="colgroup"
@@ -234,10 +304,26 @@
                   </td>
                 </tr>
                 <tr v-for="item in group.items" :key="item.key" class="border-t">
-                  <td class="text-muted-foreground py-2 pr-3 pl-2">
+                  <td
+                    v-if="edition.hasSuppliers"
+                    class="text-muted-foreground py-2 pr-3 pl-2"
+                  >
                     {{ group.label }}
                   </td>
-                  <td class="py-2 pr-3 font-semibold">{{ item.product_name }}</td>
+                  <td class="py-2 pr-3 font-semibold">
+                    <a
+                      v-if="item.supplier_url"
+                      :href="item.supplier_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="hover:text-ocre inline-flex items-center gap-1.5"
+                    >
+                      {{ item.product_name }}
+                      <ExternalLink class="size-3.5" aria-hidden="true" />
+                    </a>
+
+                    <template v-else>{{ item.product_name }}</template>
+                  </td>
                   <td class="text-muted-foreground py-2 pr-3">
                     {{ item.variants }}
                   </td>
@@ -287,65 +373,6 @@
     </div>
 
     <div
-      class="flex flex-col gap-3 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div>
-        <p class="font-semibold">Mode lecture seule global</p>
-        <p class="text-muted-foreground text-sm">
-          {{
-            isViewOnly
-              ? "Activé: personne ne peut ajouter, modifier ou confirmer une commande."
-              : "Désactivé: les employés peuvent commander."
-          }}
-        </p>
-      </div>
-      <Button
-        size="sm"
-        variant="destructive"
-        class="shrink-0"
-        @click="showReadonlyConfirm = true"
-      >
-        {{ isViewOnly ? t.viewOnlyDisable : t.viewOnlyEnable }}
-      </Button>
-    </div>
-
-    <div
-      v-if="showReadonlyConfirm"
-      class="bg-encre/55 fixed inset-0 z-50 flex items-center justify-center px-4"
-      @click.self="showReadonlyConfirm = false"
-    >
-      <div
-        class="bg-card w-full max-w-md rounded-lg border p-6 shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-      >
-        <h3 class="t-h3 font-semibold">Confirmation requise</h3>
-        <p class="text-muted-foreground mt-2 text-sm">
-          {{
-            isViewOnly
-              ? "Cette action désactive le mode lecture seule global."
-              : "Cette action active le mode lecture seule global."
-          }}
-        </p>
-        <p class="text-muted-foreground mt-1 text-sm">
-          {{
-            isViewOnly
-              ? "Les employés pourront de nouveau ajouter, modifier ou confirmer une commande."
-              : "Personne n'aura accès au shop pour ajouter, modifier ou confirmer une commande."
-          }}
-        </p>
-        <div class="mt-5 grid gap-2 sm:grid-cols-2">
-          <Button variant="outline" @click="showReadonlyConfirm = false">
-            Annuler
-          </Button>
-          <Button variant="destructive" @click="confirmToggleReadonly">
-            Confirmer
-          </Button>
-        </div>
-      </div>
-    </div>
-
-    <div
       v-if="deleteTarget"
       class="bg-encre/55 fixed inset-0 z-50 flex items-center justify-center px-4"
       @click.self="closeDeleteConfirm"
@@ -374,110 +401,181 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Download, RefreshCw } from "lucide-vue-next";
+import {
+  AlertTriangle,
+  Copy,
+  Download,
+  ExternalLink,
+  RefreshCw,
+} from "lucide-vue-next";
 import { computed, ref } from "vue";
+import { toast } from "vue-sonner";
 
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
+import SegmentedControl from "@/components/ui/SegmentedControl.vue";
+import { type Edition, PENDING_EDITION } from "@/config/edition";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 import {
+  getSupplierDot,
   getSupplierName,
-  SUPPLIER_IDS,
-  SUPPLIERS,
-  type SupplierId,
+  UNSPECIFIED_SUPPLIER_DOT,
 } from "@/config/suppliers";
+import { slugify } from "@/lib/utils";
 
 type ItemSummary = {
   key: string;
+  edition: number;
   product_name: string;
   variants: string;
   total_quantity: number;
   order_count: number;
-  /** `null`: le produit n'est plus au catalogue, fournisseur inconnu. */
-  supplier: SupplierId | null;
+  supplier: string | null;
+  supplier_variants: string;
+  supplier_url: string | null;
 };
 
-type SupplierFilter = "all" | SupplierId | "unspecified";
-
-const UNSPECIFIED_DOT = "var(--p-encre-3)";
-
-// Tant que le crédit est à déterminer, ni le budget ni la part facturable
-// ne peuvent être calculés.
-const creditKnown = CREDIT_IS_SET;
+const ALL_SUPPLIERS = "all";
+const UNSPECIFIED_SUPPLIER = "unspecified";
 const TO_BE_DETERMINED = "À déterminer";
 
 const props = defineProps<{
   t: MerchCopy;
-  isViewOnly: boolean;
   loading: boolean;
   error: string | null;
   orders: Array<{
     id: string;
+    edition: number;
+    user_id: string;
     user_name: string;
     user_email: string | null;
     item_count: number;
     total_per_person: number;
     billable_per_person: number;
-    is_locked: boolean;
+    is_placed: boolean;
     created_at: string;
   }>;
   itemsSummary: ItemSummary[];
+  suppliers: string[];
+  editions: Edition[];
+  users: Array<{
+    user_id: string;
+    email: string;
+    display_name: string;
+    last_seen_at: string | null;
+  }>;
 }>();
 
 const emit = defineEmits<{
   refresh: [];
   "select-order": [orderId: string];
   "delete-order": [orderId: string];
-  "toggle-view-only": [];
 }>();
 
-const tabs = [
+type Tab = "orders" | "items" | "users";
+
+const activeTab = ref<Tab>("orders");
+const selectedEditionNumber = ref<number | null>(null);
+const supplierFilter = ref(ALL_SUPPLIERS);
+const deleteTarget = ref<null | { id: string; userName: string }>(null);
+
+const currentEdition = computed(
+  () => props.editions[props.editions.length - 1] ?? PENDING_EDITION,
+);
+const edition = computed(
+  () =>
+    props.editions.find(
+      (option) => option.number === selectedEditionNumber.value,
+    ) ?? currentEdition.value,
+);
+const creditKnown = computed(() => edition.value.creditPerEmployee !== null);
+const editionOrders = computed(() =>
+  props.orders.filter((order) => order.edition === edition.value.number),
+);
+const editionItems = computed(() =>
+  props.itemsSummary.filter((item) => item.edition === edition.value.number),
+);
+const usersWithoutOrder = computed(() => {
+  const isPlacedByUserId = new Map(
+    editionOrders.value.map((order) => [order.user_id, order.is_placed]),
+  );
+  return props.users
+    .filter((user) => !isPlacedByUserId.get(user.user_id))
+    .map((user) => ({
+      ...user,
+      has_draft: isPlacedByUserId.has(user.user_id),
+    }));
+});
+const tabs = computed<Array<{ id: Tab; label: string }>>(() => [
   { id: "orders", label: "Commandes" },
   { id: "items", label: "Résumé de la commande" },
-] as const;
-
-const activeTab = ref<"orders" | "items">("orders");
-const supplierFilter = ref<SupplierFilter>("all");
-const showReadonlyConfirm = ref(false);
-const deleteTarget = ref<null | { id: string; userName: string }>(null);
+  {
+    id: "users",
+    label: `Sans commande (${usersWithoutOrder.value.length})`,
+  },
+]);
+const editionOptions = computed(() =>
+  [...props.editions].reverse().map((option) => ({
+    id: option.number,
+    label: `Édition ${option.number}`,
+    count: props.orders.filter((order) => order.edition === option.number)
+      .length,
+  })),
+);
+const placedOrders = computed(() =>
+  editionOrders.value.filter((order) => order.is_placed),
+);
 const totalCosts = computed(() =>
-  props.orders.reduce(
+  placedOrders.value.reduce(
     (total, order) => total + Number(order.total_per_person || 0),
     0,
   ),
 );
-const initialBudget = computed(() => props.orders.length * COMPANY_CREDIT);
+const initialBudget = computed(
+  () => placedOrders.value.length * (edition.value.creditPerEmployee ?? 0),
+);
 const budgetDelta = computed(() => initialBudget.value - totalCosts.value);
+
+const selectEdition = (number: number) => {
+  selectedEditionNumber.value = number;
+  supplierFilter.value = ALL_SUPPLIERS;
+};
 
 const sumQuantity = (items: ItemSummary[]) =>
   items.reduce((total, item) => total + item.total_quantity, 0);
 
-const itemsFor = (supplier: SupplierId | null) =>
-  props.itemsSummary
-    .filter((item) => item.supplier === supplier)
-    .sort(
-      (left, right) =>
-        right.total_quantity - left.total_quantity ||
-        left.product_name.localeCompare(right.product_name, "fr"),
-    );
+const sortItems = (items: ItemSummary[]) =>
+  [...items].sort(
+    (left, right) =>
+      right.total_quantity - left.total_quantity ||
+      left.product_name.localeCompare(right.product_name, "fr"),
+  );
+
+const itemsFor = (supplier: string | null) =>
+  sortItems(editionItems.value.filter((item) => item.supplier === supplier));
 
 const unspecifiedQuantity = computed(() => sumQuantity(itemsFor(null)));
 
-/** Tous les groupes, dans l'ordre de config/suppliers.ts. */
 const allGroups = computed(() => {
-  const groups: Array<{
-    id: SupplierId | "unspecified";
-    label: string;
-    dot: string;
-    items: ItemSummary[];
-    quantity: number;
-  }> = SUPPLIER_IDS.map((supplier) => {
+  if (!edition.value.hasSuppliers) {
+    const items = sortItems(editionItems.value);
+    return [
+      {
+        id: ALL_SUPPLIERS,
+        label: "",
+        dot: UNSPECIFIED_SUPPLIER_DOT,
+        items,
+        quantity: sumQuantity(items),
+      },
+    ];
+  }
+
+  const groups = props.suppliers.map((supplier) => {
     const items = itemsFor(supplier);
     return {
       id: supplier,
-      label: SUPPLIERS[supplier].name,
-      dot: SUPPLIERS[supplier].dot,
+      label: supplier,
+      dot: getSupplierDot(supplier, props.suppliers),
       items,
       quantity: sumQuantity(items),
     };
@@ -486,36 +584,36 @@ const allGroups = computed(() => {
   const unspecified = itemsFor(null);
   if (unspecified.length > 0) {
     groups.push({
-      id: "unspecified",
+      id: UNSPECIFIED_SUPPLIER,
       label: getSupplierName(null),
-      dot: UNSPECIFIED_DOT,
+      dot: UNSPECIFIED_SUPPLIER_DOT,
       items: unspecified,
       quantity: sumQuantity(unspecified),
     });
   }
-  return groups;
+  return groups.filter((group) => group.items.length > 0);
 });
 
 const supplierFilters = computed(() => [
   {
-    id: "all" as SupplierFilter,
+    id: ALL_SUPPLIERS,
     label: "Tous",
     dot: null as string | null,
-    quantity: sumQuantity(props.itemsSummary),
+    count: sumQuantity(editionItems.value),
   },
   ...allGroups.value.map((group) => ({
-    id: group.id as SupplierFilter,
+    id: group.id,
     label: group.label,
     dot: group.dot as string | null,
-    quantity: group.quantity,
+    count: group.quantity,
   })),
 ]);
 
 const groupedItems = computed(() =>
   allGroups.value.filter(
     (group) =>
-      group.items.length > 0 &&
-      (supplierFilter.value === "all" || supplierFilter.value === group.id),
+      supplierFilter.value === ALL_SUPPLIERS ||
+      supplierFilter.value === group.id,
   ),
 );
 
@@ -525,12 +623,17 @@ const filteredItems = computed(() =>
   ),
 );
 
-const exportLabel = computed(() => {
-  const active = allGroups.value.find(
-    (group) => group.id === supplierFilter.value,
-  );
-  return active ? `Export CSV (${active.label})` : "Export CSV";
-});
+const activeSupplierGroup = computed(() =>
+  edition.value.hasSuppliers
+    ? allGroups.value.find((group) => group.id === supplierFilter.value)
+    : undefined,
+);
+
+const exportLabel = computed(() =>
+  activeSupplierGroup.value
+    ? `Export CSV (${activeSupplierGroup.value.label})`
+    : "Export CSV",
+);
 
 const escapeCsv = (value: string | number) => {
   const raw = String(value ?? "");
@@ -540,47 +643,69 @@ const escapeCsv = (value: string | number) => {
   return raw;
 };
 
-const slugify = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
-const exportItemsSummaryCsv = () => {
-  const headers = [
-    "Fournisseur",
-    "Article",
-    "Variantes",
-    "Qté totale",
-    "Commandes",
-  ];
-  const rows = filteredItems.value.map((item) => [
-    item.supplierLabel,
-    item.product_name,
-    item.variants,
-    item.total_quantity,
-    item.order_count,
-  ]);
-
-  const csvLines = [headers, ...rows].map((row) =>
-    row.map((cell) => escapeCsv(cell)).join(","),
-  );
-  const csvContent = `﻿${csvLines.join("\n")}`;
+const downloadCsv = (fileName: string, rows: Array<Array<string | number>>) => {
+  const csvContent = `\uFEFF${rows
+    .map((row) => row.map((cell) => escapeCsv(cell)).join(","))
+    .join("\n")}`;
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
-  const active = allGroups.value.find(
-    (group) => group.id === supplierFilter.value,
-  );
-  const scope = active ? slugify(active.label) : "tous-fournisseurs";
   anchor.href = url;
-  anchor.download = `resume-commande-${scope}-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `${fileName}-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+};
+
+const exportItemsSummaryCsv = () => {
+  const supplierHeaders = edition.value.hasSuppliers
+    ? ["Fournisseur", "Lien fournisseur"]
+    : [];
+  const variantHeaders = edition.value.hasSuppliers
+    ? ["Variantes", "Variantes (nom du fournisseur)"]
+    : ["Variantes"];
+  const scope = activeSupplierGroup.value
+    ? slugify(activeSupplierGroup.value.label)
+    : "tous-fournisseurs";
+
+  downloadCsv(`resume-commande-edition-${edition.value.number}-${scope}`, [
+    [...supplierHeaders, "Article", ...variantHeaders, "Qté totale", "Commandes"],
+    ...filteredItems.value.map((item) => [
+      ...(edition.value.hasSuppliers
+        ? [item.supplierLabel, item.supplier_url ?? ""]
+        : []),
+      item.product_name,
+      item.variants,
+      ...(edition.value.hasSuppliers ? [item.supplier_variants] : []),
+      item.total_quantity,
+      item.order_count,
+    ]),
+  ]);
+};
+
+const exportUsersCsv = () => {
+  downloadCsv(`sans-commande-edition-${edition.value.number}`, [
+    ["Nom", "Courriel", "Statut", "Dernière visite"],
+    ...usersWithoutOrder.value.map((user) => [
+      user.display_name,
+      user.email,
+      user.has_draft ? "Brouillon" : "Aucune commande",
+      user.last_seen_at ? formatDateTime(user.last_seen_at) : "",
+    ]),
+  ]);
+};
+
+const copyUserEmails = async () => {
+  try {
+    await navigator.clipboard.writeText(
+      usersWithoutOrder.value.map((user) => user.email).join(", "),
+    );
+    toast.success("Courriels copiés.");
+  } catch (error) {
+    console.error(error);
+    toast.error("Les courriels n'ont pas pu être copiés.");
+  }
 };
 
 const formatDateTime = (value: string) => {
@@ -599,11 +724,6 @@ const formatSubtotal = (value: string | number) => {
     return `${value} $`;
   }
   return `${numeric.toFixed(2)} $`;
-};
-
-const confirmToggleReadonly = () => {
-  emit("toggle-view-only");
-  showReadonlyConfirm.value = false;
 };
 
 const openDeleteConfirm = (id: string, userName: string) => {

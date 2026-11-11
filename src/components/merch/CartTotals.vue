@@ -77,7 +77,6 @@ import CreditMeter from "@/components/merch/CreditMeter.vue";
 import Button from "@/components/ui/Button.vue";
 import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 
 withDefaults(
   defineProps<{
@@ -90,17 +89,15 @@ withDefaults(
     isEmpty: boolean;
     readOnly?: boolean;
     showHint?: boolean;
-    creditTotal?: number;
+    creditTotal: number;
     /** `false` tant que le montant du crédit est à déterminer. */
-    creditKnown?: boolean;
+    creditKnown: boolean;
     /** Sans cadre: quand le parent fournit déjà la surface (tiroir du panier). */
     flat?: boolean;
   }>(),
   {
     readOnly: false,
     showHint: false,
-    creditTotal: COMPANY_CREDIT,
-    creditKnown: CREDIT_IS_SET,
     flat: false,
   },
 );

@@ -1,46 +1,56 @@
 import type { StoreLocale } from "@/types/merch";
 
-/**
- * Paramètres de l'édition en cours du Propulshop.
- *
- * C'est le SEUL endroit à modifier pour fixer le montant du crédit et la
- * date limite: les bannières, le panier, les infobulles et le tableau de
- * bord admin lisent tous ces valeurs.
- *
- * Tant qu'une valeur vaut `null`, elle est « À déterminer »: l'interface
- * l'écrit en toutes lettres et ne calcule rien à partir d'elle (aucun
- * crédit n'est appliqué au panier, aucun montant à payer n'est avancé).
- */
-type Edition = {
+export type Edition = {
 	number: number;
-	name: Record<StoreLocale, string>;
-	ordinal: Record<StoreLocale, string>;
-	/** Crédit offert par employé, en dollars canadiens. `null`: à déterminer. */
 	creditPerEmployee: number | null;
-	/**
-	 * Date limite pour commander, ISO 8601 avec le décalage de Montréal,
-	 * ex. "2026-12-15T23:59:59-05:00". `null`: à déterminer.
-	 */
 	orderDeadline: string | null;
+	hasSuppliers: boolean;
+	isOpen: boolean;
 };
 
-export const EDITION: Edition = {
-	number: 2,
-	name: {
-		fr: "Deuxième édition",
-		en: "Second edition",
-	},
-	ordinal: {
-		fr: "deuxième",
-		en: "second",
-	},
-
-	// PLACEHOLDER: à déterminer. Remplacer `null` par le montant, ex. 200.
+export const PENDING_EDITION: Edition = {
+	number: 0,
 	creditPerEmployee: null,
-
-	// PLACEHOLDER: à déterminer. Remplacer `null` par la date,
-	// ex. "2026-12-15T23:59:59-05:00".
 	orderDeadline: null,
+	hasSuppliers: true,
+	isOpen: false,
+};
+
+const ORDINALS: Record<StoreLocale, string[]> = {
+	fr: [
+		"première",
+		"deuxième",
+		"troisième",
+		"quatrième",
+		"cinquième",
+		"sixième",
+		"septième",
+		"huitième",
+		"neuvième",
+		"dixième",
+	],
+	en: [
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+		"seventh",
+		"eighth",
+		"ninth",
+		"tenth",
+	],
+};
+
+export const getEditionOrdinal = (number: number, locale: StoreLocale) =>
+	ORDINALS[locale][number - 1] ??
+	(locale === "fr" ? `${number}e` : `#${number}`);
+
+export const getEditionName = (number: number, locale: StoreLocale) => {
+	const ordinal = getEditionOrdinal(number, locale);
+	const capitalized = ordinal.charAt(0).toUpperCase() + ordinal.slice(1);
+	return locale === "fr" ? `${capitalized} édition` : `${capitalized} edition`;
 };
 
 const TIME_ZONE = "America/Toronto";
@@ -92,13 +102,58 @@ export const formatDeadlineDate = (
 	return locale === "fr" ? text.replace(/^1 /, "1er ") : text;
 };
 
-export const getDeadlineDate = () => parseDate(EDITION.orderDeadline);
+const getTimeZoneOffsetMs = (date: Date) => {
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat("en-CA", {
+			timeZone: TIME_ZONE,
+			hourCycle: "h23",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		})
+			.formatToParts(date)
+			.map((part) => [part.type, Number(part.value)]),
+	);
+	return (
+		Date.UTC(
+			parts.year,
+			parts.month - 1,
+			parts.day,
+			parts.hour,
+			parts.minute,
+			parts.second,
+		) - date.getTime()
+	);
+};
 
-export const formatDeadlineLong = (locale: StoreLocale) =>
-	formatDeadlineDate(EDITION.orderDeadline, locale, "long");
+export const toDeadlineIso = (dateInput: string) => {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateInput);
+	if (!match) {
+		return null;
+	}
+	const [year, month, day] = match.slice(1).map(Number);
+	const wallTime = Date.UTC(year, month - 1, day, 23, 59, 59);
+	return new Date(
+		wallTime - getTimeZoneOffsetMs(new Date(wallTime)),
+	).toISOString();
+};
 
-export const formatDeadlineShort = (locale: StoreLocale) =>
-	formatDeadlineDate(EDITION.orderDeadline, locale, "short");
+export const toDeadlineDateInput = (iso: string | null) => {
+	const date = parseDate(iso);
+	return date
+		? new Intl.DateTimeFormat("en-CA", {
+				timeZone: TIME_ZONE,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			}).format(date)
+		: "";
+};
 
-export const formatCredit = (locale: StoreLocale) =>
-	formatCreditAmount(EDITION.creditPerEmployee, locale);
+export const isDeadlinePassed = (edition: Edition) => {
+	const deadline = parseDate(edition.orderDeadline);
+	return deadline ? Date.now() >= deadline.getTime() : false;
+};

@@ -25,6 +25,7 @@ type LineLike = {
 export function getVariantChips(
 	line: LineLike,
 	locale: StoreLocale,
+	labelSource: "display" | "supplier" = "display",
 ): VariantChip[] {
 	const fromCatalog = (line.product.variantGroups ?? [])
 		.map((group): VariantChip | null => {
@@ -37,7 +38,9 @@ export function getVariantChips(
 			return {
 				key: group.id,
 				group: group.label[locale],
-				label: option.label[locale],
+				label:
+					(labelSource === "supplier" && option.supplierLabel) ||
+					option.label[locale],
 				swatchHex: group.type === "color" ? option.swatchHex : undefined,
 			};
 		})

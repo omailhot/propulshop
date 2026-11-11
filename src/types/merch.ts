@@ -1,5 +1,3 @@
-import type { SupplierId } from "@/config/suppliers";
-
 export type StoreLocale = "en" | "fr";
 
 export type Category =
@@ -15,6 +13,7 @@ export type ProductVariantOption = {
 	swatchHex?: string;
 	orderProductId?: string;
 	priceDelta?: number;
+	supplierLabel?: string;
 };
 
 export type ProductVariantGroup = {
@@ -38,14 +37,14 @@ export type Product = {
 	id: string;
 	category: Category;
 	price: number;
-	supplier: SupplierId;
-	/** Toutes les images, dans l'ordre du fichier markdown. */
+	supplier: string | null;
+	supplierUrl: string | null;
+	cost: number | null;
+	isActive: boolean;
+	sortOrder: number;
 	images: ProductImage[];
-	/** Les mêmes images, à plat (compatibilité avec les vues existantes). */
-	imageGallery: string[];
 	variantGroups?: ProductVariantGroup[];
 	name: Record<StoreLocale, string>;
-	/** Description en markdown (corps du fichier produit). */
 	description: Record<StoreLocale, string>;
 };
 
@@ -61,9 +60,9 @@ export type CartItem = {
 export type CartLineProduct = {
 	id?: string;
 	name: Record<StoreLocale, string>;
-	supplier?: SupplierId | null;
+	supplier?: string | null;
+	supplierUrl?: string | null;
 	images?: ProductImage[];
-	imageGallery?: string[];
 	variantGroups?: ProductVariantGroup[];
 };
 

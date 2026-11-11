@@ -12,7 +12,9 @@
           class="border-input rounded-lg border border-dashed p-6 text-center"
         >
           <p class="font-semibold">{{ t.emptyCart }}</p>
-          <p class="text-muted-foreground text-sm">{{ t.addFromCatalog }}</p>
+          <p class="text-muted-foreground text-sm">
+            {{ isEditingPlacedOrder ? t.cancelOrderHint : t.addFromCatalog }}
+          </p>
         </div>
 
         <ul v-else class="divide-y">
@@ -64,7 +66,7 @@
                     {{ formatCurrency.format(line.lineTotal) }}
                   </p>
                   <div
-                    v-if="!isReadOnly"
+                    v-if="!viewOnly"
                     class="flex flex-col items-start gap-2.5 sm:items-end"
                   >
                     <template
@@ -204,25 +206,35 @@
           </p>
 
           <div class="grid gap-2">
-            <!-- Le seul bouton plein de l'écran: verrouiller la commande. -->
             <Button
-              v-if="!isReadOnly"
+              v-if="!viewOnly && isCancellingOrder"
+              size="lg"
+              variant="destructive"
+              :disabled="isSubmitting"
+              @click="$emit('place-order')"
+            >
+              {{ t.cancelOrder }}
+            </Button>
+
+            <Button
+              v-else-if="!viewOnly"
               size="lg"
               :disabled="cartLines.length === 0 || isSubmitting"
               @click="$emit('place-order')"
             >
-              <Lock class="size-4" />
-              {{ t.lockOrder }}
+              <Check class="size-4" />
+              {{ isEditingPlacedOrder ? t.saveOrderChanges : t.placeOrder }}
             </Button>
+
             <Button
-              v-if="showLockToggle && !viewOnly"
+              v-if="isEditingPlacedOrder"
               variant="outline"
-              :disabled="lockActionBusy"
-              @click="$emit('toggle-lock')"
+              :disabled="isSubmitting"
+              @click="$emit('cancel-edit')"
             >
-              <component :is="isOrderLocked ? LockOpen : Lock" class="size-4" />
-              {{ isOrderLocked ? t.unlockOrder : t.lockOrder }}
+              {{ t.cancelEdit }}
             </Button>
+
             <Button variant="outline" @click="$emit('back')">
               <ArrowLeft class="size-4" />
               {{ backLabel ?? t.backToCatalog }}
@@ -235,12 +247,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ArrowLeft,
-  CircleHelp,
-  Lock,
-  LockOpen,
-} from "lucide-vue-next";
+import { ArrowLeft, Check, CircleHelp } from "lucide-vue-next";
 import { computed } from "vue";
 
 import CreditMeter from "@/components/merch/CreditMeter.vue";
@@ -250,7 +257,6 @@ import ColorSwatches from "@/components/ui/ColorSwatches.vue";
 import QuantityStepper from "@/components/ui/QuantityStepper.vue";
 import Tooltip from "@/components/ui/Tooltip.vue";
 import type { MerchCopy } from "@/config/merch-copy";
-import { COMPANY_CREDIT, CREDIT_IS_SET } from "@/config/merch-store";
 import {
   getMaxQuantityForProductId,
   isGiftCardProductId,
@@ -263,37 +269,27 @@ import type {
   StoreLocale,
 } from "@/types/merch";
 
-const props = withDefaults(
-  defineProps<{
-    t: MerchCopy;
-    locale: StoreLocale;
-    cartLines: CartLineView[];
-    subtotal: number;
-    creditUsed: number;
-    creditRemaining: number;
-    walletToPay: number;
-    formatCurrency: Intl.NumberFormat;
-    isSubmitting?: boolean;
-    lockActionBusy?: boolean;
-    isOrderLocked: boolean;
-    isLockDeadlinePassed: boolean;
-    lockDeadlineLabel: string;
-    orderStatusMessage: string;
-    readOnly?: boolean;
-    viewOnly?: boolean;
-    isPlaced?: boolean;
-    backLabel?: string;
-    showLockToggle?: boolean;
-    creditTotal?: number;
-    /** `false` tant que le montant du crédit est à déterminer. */
-    creditKnown?: boolean;
-  }>(),
-  { creditTotal: COMPANY_CREDIT, creditKnown: CREDIT_IS_SET },
-);
+const props = defineProps<{
+  t: MerchCopy;
+  locale: StoreLocale;
+  cartLines: CartLineView[];
+  subtotal: number;
+  creditUsed: number;
+  creditRemaining: number;
+  walletToPay: number;
+  formatCurrency: Intl.NumberFormat;
+  isSubmitting?: boolean;
+  isEditingPlacedOrder?: boolean;
+  viewOnly?: boolean;
+  backLabel?: string;
+  creditTotal: number;
+  /** `false` tant que le montant du crédit est à déterminer. */
+  creditKnown: boolean;
+}>();
 
 const emit = defineEmits<{
   back: [];
-  "toggle-lock": [];
+  "cancel-edit": [];
   "remove-item": [cartItemId: string];
   "update-item-quantity": [cartItemId: string, nextQuantity: number];
   "update-item-variants": [
@@ -303,7 +299,9 @@ const emit = defineEmits<{
   "place-order": [];
 }>();
 
-const isReadOnly = computed(() => Boolean(props.readOnly || props.viewOnly));
+const isCancellingOrder = computed(
+  () => props.isEditingPlacedOrder && props.cartLines.length === 0,
+);
 
 const toSwatchOptions = (group: ProductVariantGroup) =>
   group.options.map((option) => ({

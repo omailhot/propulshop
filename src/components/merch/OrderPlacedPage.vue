@@ -53,14 +53,9 @@
           <Button size="lg" @click="$emit('back')">
             {{ t.backToCatalog }}
           </Button>
-          <Button
-            v-if="!viewOnly"
-            variant="outline"
-            :disabled="lockActionBusy"
-            @click="$emit('unlock-and-back')"
-          >
-            <LockOpen class="size-4" />
-            {{ t.unlockOrder }}
+          <Button v-if="canEdit" variant="outline" @click="$emit('edit-order')">
+            <Pencil class="size-4" />
+            {{ t.modifyOrder }}
           </Button>
         </div>
       </div>
@@ -69,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { Check, LockOpen } from "lucide-vue-next";
+import { Check, Pencil } from "lucide-vue-next";
 import { computed } from "vue";
 
 import VariantChips from "@/components/merch/VariantChips.vue";
@@ -83,14 +78,12 @@ const props = defineProps<{
   t: MerchCopy;
   locale: StoreLocale;
   cartLines: CartLineView[];
-  deadlineLabel: string;
-  lockActionBusy?: boolean;
-  viewOnly?: boolean;
+  canEdit: boolean;
 }>();
 
 defineEmits<{
   back: [];
-  "unlock-and-back": [];
+  "edit-order": [];
 }>();
 
 const recapLines = computed(() => props.cartLines.slice(0, 4));

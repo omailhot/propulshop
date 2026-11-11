@@ -41,7 +41,7 @@
       <div v-if="cartLines.length > 0" class="border-t pt-4">
         <button
           type="button"
-class="text-foreground hover:bg-encre/8 focus-visible:ring-ring/40 inline-flex h-9 cursor-pointer items-center rounded-md px-3 text-sm outline-none transition-colors focus-visible:ring-[3px] -ml-3 disabled:pointer-events-none disabled:opacity-50"
+          class="text-foreground hover:bg-encre/8 focus-visible:ring-ring/40 -ml-3 inline-flex h-9 cursor-pointer items-center rounded-md px-3 text-sm transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50"
           :disabled="readOnly"
           @click="$emit('reset-cart')"
         >
@@ -61,6 +61,8 @@ class="text-foreground hover:bg-encre/8 focus-visible:ring-ring/40 inline-flex h
         :credit-used="creditUsed"
         :credit-remaining="creditRemaining"
         :wallet-to-pay="walletToPay"
+        :credit-total="creditTotal"
+        :credit-known="creditKnown"
         :format-currency="formatCurrency"
         :is-empty="cartLines.length === 0"
         :read-only="readOnly"
@@ -90,6 +92,8 @@ const props = defineProps<{
   creditUsed: number;
   creditRemaining: number;
   walletToPay: number;
+  creditTotal: number;
+  creditKnown: boolean;
   formatCurrency: Intl.NumberFormat;
   readOnly?: boolean;
 }>();

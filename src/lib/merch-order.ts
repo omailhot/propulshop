@@ -1,4 +1,5 @@
-import type { Product } from "@/types/merch";
+import type { StoredOrderItem } from "@/lib/order-repository";
+import type { CartItem, CartLineView, Product } from "@/types/merch";
 
 export const GIFT_CARD_DEFAULT_AMOUNT = 250;
 export const GIFT_CARD_MIN_AMOUNT = 25;
@@ -135,6 +136,58 @@ export const withImpliedOptions = (
 		...selectedOptions,
 		[implied.group.id]: implied.option.id,
 	});
+};
+
+export const toCartItem = (
+	item: StoredOrderItem,
+	products: Product[],
+): CartItem => {
+	const storedOptions = normalizeSelectedOptions(item.selectedOptions);
+	const product = findProductByOrderProductId(
+		products,
+		item.productId,
+		storedOptions,
+	);
+	const selectedOptions = withImpliedOptions(
+		product,
+		item.productId,
+		storedOptions,
+	);
+	const productId = product?.id ?? item.productId;
+	return {
+		id: buildCartItemId(productId, selectedOptions),
+		productId,
+		quantity: item.quantity,
+		selectedOptions,
+		selectedOptionLabels: item.selectedOptionLabels,
+	};
+};
+
+export const toOrderLineView = (
+	item: StoredOrderItem,
+	products: Product[],
+): CartLineView => {
+	const storedOptions = normalizeSelectedOptions(item.selectedOptions);
+	const product = findProductByOrderProductId(
+		products,
+		item.productId,
+		storedOptions,
+	);
+	return {
+		id: item.id,
+		quantity: item.quantity,
+		lineTotal: item.lineTotal,
+		selectedOptions: withImpliedOptions(product, item.productId, storedOptions),
+		selectedOptionLabels: item.selectedOptionLabels,
+		product: {
+			id: product?.id,
+			name: product?.name ?? { en: item.productName, fr: item.productName },
+			supplier: product?.supplier ?? null,
+			supplierUrl: product?.supplierUrl ?? null,
+			images: product?.images,
+			variantGroups: product?.variantGroups,
+		},
+	};
 };
 
 export const computeBillableByPerson = (

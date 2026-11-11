@@ -1,7 +1,6 @@
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, type Ref, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
-import { COMPANY_CREDIT } from "@/config/merch-store";
 import {
 	buildCartItemId,
 	normalizeSelectedOptions,
@@ -12,7 +11,10 @@ import type { CartItem, Category, Product } from "@/types/merch";
 
 const CART_SESSION_KEY = "propulshop-cart";
 
-export function useMerchStore(products: Product[]) {
+export function useMerchStore(
+	products: Ref<Product[]>,
+	companyCredit: Ref<number>,
+) {
 	const activeCategory = ref<"all" | Category>("all");
 	const cartItems = ref<CartItem[]>([]);
 	const cartOpen = ref(false);
@@ -97,7 +99,7 @@ export function useMerchStore(products: Product[]) {
 	);
 
 	const productById = computed(
-		() => new Map(products.map((product) => [product.id, product])),
+		() => new Map(products.value.map((product) => [product.id, product])),
 	);
 
 	const cartLines = computed(() =>
@@ -126,12 +128,14 @@ export function useMerchStore(products: Product[]) {
 	const subtotal = computed(() =>
 		cartLines.value.reduce((total, line) => total + line.lineTotal, 0),
 	);
-	const creditUsed = computed(() => Math.min(COMPANY_CREDIT, subtotal.value));
+	const creditUsed = computed(() =>
+		Math.min(companyCredit.value, subtotal.value),
+	);
 	const creditRemaining = computed(() =>
-		Math.max(COMPANY_CREDIT - creditUsed.value, 0),
+		Math.max(companyCredit.value - creditUsed.value, 0),
 	);
 	const walletToPay = computed(() =>
-		Math.max(subtotal.value - COMPANY_CREDIT, 0),
+		Math.max(subtotal.value - companyCredit.value, 0),
 	);
 
 	const activeProduct = computed(() => {

@@ -13,16 +13,18 @@
     :sign-out-label="t.logout"
     :admin-label="t.admin"
     :catalog-label="t.backToCatalogShort"
+    :orders-label="t.myOrders"
     :show-credit="currentView === 'catalog' && !isReadOnlyForCurrentUser"
     :credit-label="t.creditRemainingShort"
     :credit-remaining-label="
-      CREDIT_IS_SET
+      isCreditKnown
         ? formatCurrency.format(derived.creditRemaining.value)
         : t.toBeDetermined
     "
     @connect-google="onConnectGoogle"
     @sign-out="onSignOut"
     @open-admin="onOpenAdmin"
+    @open-orders="onOpenOrders"
     @open-catalog="currentView = 'catalog'"
     @open-home="onBackToCatalog"
   />
@@ -58,18 +60,65 @@
   <!-- Le fond: grège, sans dégradé. Le dégradé ne sert jamais de fond de page. -->
   <main class="min-h-[calc(100vh-4rem)] overflow-x-clip pb-16">
     <div class="mx-auto max-w-6xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
-      <div v-if="currentView === 'admin'">
+      <div v-if="isAdminView">
+        <nav class="mb-4 flex gap-1" aria-label="Administration">
+          <Button
+            v-for="section in adminSections"
+            :key="section.view"
+            size="sm"
+            :variant="activeAdminSection === section.view ? 'secondary' : 'ghost'"
+            @click="currentView = section.view"
+          >
+            {{ section.label }}
+          </Button>
+        </nav>
+
         <AdminDashboard
+          v-if="currentView === 'admin'"
           :t="t"
-          :is-view-only="isViewOnly"
           :loading="adminLoading"
           :error="adminError"
           :orders="adminOrders"
           :items-summary="adminItemsSummary"
+          :suppliers="suppliers"
+          :editions="editions"
+          :users="adminUsers"
           @refresh="loadAdminDashboard"
           @select-order="onOpenAdminOrder"
           @delete-order="onDeleteAdminOrder"
-          @toggle-view-only="toggleViewOnly"
+        />
+
+        <AdminProductsPage
+          v-else-if="currentView === 'admin-products'"
+          :locale="locale"
+          :products="products"
+          :suppliers="suppliers"
+          :format-currency="formatCurrency"
+          :has-load-failed="hasCatalogLoadFailed"
+          :save-product="saveProduct"
+          :remove-product="removeProduct"
+          :reorder-products="reorderProducts"
+        />
+
+        <AdminEditionsPage
+          v-else-if="currentView === 'admin-editions'"
+          :locale="locale"
+          :editions="editions"
+          :order-count-by-edition="adminOrderCountByEdition"
+          :add-edition="addEdition"
+          :save-edition="saveEdition"
+          :remove-edition="removeEdition"
+        />
+
+        <AdminOrderDetailsPage
+          v-else
+          :t="t"
+          :locale="locale"
+          :cart-lines="adminOrderLines"
+          :format-currency="formatCurrency"
+          :suppliers="suppliers"
+          :has-suppliers="adminOrderHasSuppliers"
+          @back="currentView = 'admin'"
         />
       </div>
       <div
@@ -89,7 +138,29 @@
         </div>
 
         <div
-          v-if="activeOrderConfirmedAt"
+          v-if="isEditingPlacedOrder"
+          class="bg-ocre-pale mb-6 flex flex-col gap-3 rounded-lg p-4"
+          role="status"
+        >
+          <div class="flex items-start gap-3">
+            <Pencil class="text-ocre mt-0.5 size-4 shrink-0" />
+            <div>
+              <p class="font-semibold">{{ t.editingBannerTitle }}</p>
+              <p class="mt-0.5 text-sm">{{ t.editingBannerBody }}</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:pl-7">
+            <Button variant="outline" @click="onCancelEdit">
+              {{ t.cancelEdit }}
+            </Button>
+            <Button variant="outline" @click="onContinueCheckout">
+              {{ t.reviewChanges }}
+            </Button>
+          </div>
+        </div>
+
+        <div
+          v-else-if="isOrderPlaced"
           class="mb-6 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div class="flex items-start gap-3">
@@ -102,7 +173,7 @@
             <div>
               <p class="font-semibold">{{ t.existingOrderBannerTitle }}</p>
               <p class="text-muted-foreground mt-0.5 text-sm">
-                {{ orderStatusMessage }}
+                {{ orderPlacedLabel }}
               </p>
             </div>
           </div>
@@ -110,16 +181,16 @@
             <Button
               v-if="!isReadOnlyForCurrentUser"
               variant="outline"
-              :disabled="lockActionBusy"
-              @click="onToggleOrderLock"
+              @click="onStartEditingOrder"
             >
-              {{ t.unlockOrder }}
+              {{ t.modifyOrder }}
             </Button>
-            <Button variant="outline" @click="onOpenDashboard">
+            <Button variant="outline" @click="currentView = 'placed'">
               {{ t.viewMyOrder }}
             </Button>
           </div>
         </div>
+
         <!-- L'accueil: un titre et une ligne de faits. Rien d'autre. -->
         <section class="pb-8 sm:pb-10">
           <h1 class="t-h1">{{ t.welcomeTitle }}</h1>
@@ -141,10 +212,18 @@
           </dl>
         </section>
 
+        <p
+          v-if="shopProducts.length === 0 && catalogStatusMessage"
+          class="text-muted-foreground mb-4 text-sm"
+          role="status"
+        >
+          {{ catalogStatusMessage }}
+        </p>
+
         <CatalogSection
           :t="t"
           :locale="locale"
-          :products="products"
+          :products="shopProducts"
           :cart-lines="derived.cartLines.value"
           :format-currency="formatCurrency"
           :view-only="isReadOnlyForCurrentUser"
@@ -163,40 +242,36 @@
         :credit-used="derived.creditUsed.value"
         :credit-remaining="derived.creditRemaining.value"
         :wallet-to-pay="derived.walletToPay.value"
+        :credit-total="companyCredit"
+        :credit-known="isCreditKnown"
         :format-currency="formatCurrency"
         :is-submitting="isSubmittingOrder"
-        :lock-action-busy="lockActionBusy"
-        :is-order-locked="activeOrderLocked"
-        :is-lock-deadline-passed="isLockDeadlinePassed"
-        :lock-deadline-label="lockDeadlineLabel"
-        :order-status-message="orderStatusMessage"
+        :is-editing-placed-order="isEditingPlacedOrder"
         :view-only="isReadOnlyForCurrentUser"
-        :is-placed="false"
         :back-label="t.backToCatalog"
         @back="onBackToCatalog"
         @remove-item="onRemoveCartItem"
         @update-item-quantity="onUpdateCartItemQuantity"
         @update-item-variants="onUpdateCartItemVariants"
         @place-order="submitOrder"
+        @cancel-edit="onCancelEdit"
       />
       <OrderPlacedPage
         v-else-if="currentView === 'placed'"
         :t="t"
         :locale="locale"
-        :cart-lines="placedOrderPreview.cartLines"
-        :deadline-label="lockDeadlineLabel"
-        :lock-action-busy="lockActionBusy"
-        :view-only="isReadOnlyForCurrentUser"
+        :cart-lines="placedOrderLines"
+        :can-edit="!isReadOnlyForCurrentUser"
         @back="onBackToCatalog"
-        @unlock-and-back="onUnlockAndBackToCatalog"
+        @edit-order="onStartEditingOrder"
       />
-      <AdminOrderDetailsPage
+      <OrderHistoryPage
         v-else
         :t="t"
         :locale="locale"
-        :cart-lines="adminPreview.cartLines"
+        :orders="orderHistory"
         :format-currency="formatCurrency"
-        @back="onBackFromAdminOrder"
+        @back="onBackToCatalog"
       />
     </div>
   </main>
@@ -207,7 +282,7 @@
     :product="derived.activeProduct.value"
     :open="Boolean(state.activeProductId.value)"
     :format-currency="formatCurrency"
-    :read-only="!isOrderEditable || isReadOnlyForCurrentUser"
+    :read-only="isReadOnlyForCurrentUser"
     :initial-options="activeProductInitialOptions"
     @close="actions.setActiveProductId(null)"
     @add-to-cart="onAddToCart"
@@ -215,42 +290,6 @@
 
   <!-- Les avis vivent en bas, le panier en haut: ils ne se croisent jamais. -->
   <Toaster position="bottom-right" />
-
-  <div
-    v-if="showOverwriteModal"
-    class="bg-encre/55 fixed inset-0 z-50 flex items-center justify-center px-4"
-    @click.self="onCancelOverwriteModal"
-  >
-    <div
-      class="bg-card relative w-full max-w-md rounded-lg border p-6 shadow-2xl"
-      role="dialog"
-      aria-modal="true"
-    >
-      <button
-        type="button"
-        class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/40 absolute top-3 right-3 cursor-pointer rounded-md p-1 transition-colors outline-none focus-visible:ring-[3px]"
-        :aria-label="t.closeLabel"
-        @click="onCancelOverwriteModal"
-      >
-        <X class="size-4" />
-      </button>
-      <h3 class="t-h3 pr-6 font-semibold">{{ t.orderPlacedStatus }}</h3>
-      <p class="text-muted-foreground mt-2 text-sm">
-        {{ t.existingOrderBannerTitle }}
-      </p>
-      <p class="text-muted-foreground mt-1 text-sm">
-        {{ t.overwriteOrderPrompt }}
-      </p>
-      <div class="mt-5 grid gap-2 sm:grid-cols-2">
-        <Button variant="outline" @click="onGoToExistingOrderFromModal">
-          {{ t.viewMyOrder }}
-        </Button>
-        <Button variant="destructive" @click="onConfirmOverwriteOrder">
-          {{ t.overwriteOrderAction }}
-        </Button>
-      </div>
-    </div>
-  </div>
 
   <!--
     Panier flottant, en haut à droite sous l'en-tête collant. Sur grand
@@ -344,14 +383,14 @@
               </dt>
               <dd class="t-num font-semibold">
                 {{
-                  CREDIT_IS_SET
+                  isCreditKnown
                     ? formatCurrency.format(derived.creditRemaining.value)
                     : t.toBeDetermined
                 }}
               </dd>
             </div>
             <div
-              v-if="CREDIT_IS_SET && derived.walletToPay.value > 0"
+              v-if="isCreditKnown && derived.walletToPay.value > 0"
               class="flex justify-between gap-3"
             >
               <dt class="text-muted-foreground">{{ t.walletToPay }}</dt>
@@ -382,8 +421,10 @@
     :credit-used="derived.creditUsed.value"
     :credit-remaining="derived.creditRemaining.value"
     :wallet-to-pay="derived.walletToPay.value"
+    :credit-total="companyCredit"
+    :credit-known="isCreditKnown"
     :format-currency="formatCurrency"
-    :read-only="!isOrderEditable || isReadOnlyForCurrentUser"
+    :read-only="isReadOnlyForCurrentUser"
     @close="actions.setCartOpen(false)"
     @reset-cart="onResetCart"
     @remove-item="onRemoveCartItem"
@@ -393,46 +434,80 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Lock, ShoppingBag, X } from "lucide-vue-next";
+import { Check, Lock, Pencil, ShoppingBag } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import Header from "@/components/Header.vue";
 import AdminDashboard from "@/components/merch/AdminDashboard.vue";
 import AdminOrderDetailsPage from "@/components/merch/AdminOrderDetailsPage.vue";
+import AdminEditionsPage from "@/components/merch/admin-editions/AdminEditionsPage.vue";
+import AdminProductsPage from "@/components/merch/admin-products/AdminProductsPage.vue";
 import CartDrawer from "@/components/merch/CartDrawer.vue";
 import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
+import OrderHistoryPage from "@/components/merch/OrderHistoryPage.vue";
 import OrderPlacedPage from "@/components/merch/OrderPlacedPage.vue";
 import ProductDetailsModal from "@/components/merch/ProductDetailsModal.vue";
 import Button from "@/components/ui/Button.vue";
 import { Toaster } from "@/components/ui/sonner";
-import { EDITION, formatCredit, formatDeadlineLong } from "@/config/edition";
-import { merchCopy } from "@/config/merch-copy";
 import {
-  COMPANY_CREDIT,
-  CREDIT_IS_SET,
-  products,
-} from "@/config/merch-store";
-import type { SupplierId } from "@/config/suppliers";
+  formatCreditAmount,
+  formatDeadlineDate,
+  getEditionName,
+  isDeadlinePassed,
+} from "@/config/edition";
+import { createMerchCopy } from "@/config/merch-copy";
+import { useEditions } from "@/hooks/use-editions";
 import { useMerchStore } from "@/hooks/use-merch-store";
+import { useProductCatalog } from "@/hooks/use-product-catalog";
 import {
   buildCartItemId,
   computeBillableByPerson,
-  findProductByOrderProductId,
   GIFT_CARD_DEFAULT_AMOUNT,
   GIFT_CARD_MAX_AMOUNT,
   GIFT_CARD_MIN_AMOUNT,
   normalizeSelectedOptions,
   resolveOrderProductSelection,
+  toCartItem,
+  toOrderLineView,
   validateGiftCardAmount,
-  withImpliedOptions,
 } from "@/lib/merch-order";
 import { neonClient } from "@/lib/neon-client";
+import {
+  deleteOrder,
+  fetchAllOrders,
+  fetchUserOrders,
+  type OrderPayload,
+  type StoredOrder,
+  saveOrder,
+} from "@/lib/order-repository";
 import { formatVariantChips, getVariantChips } from "@/lib/variant-labels";
 import type { CartLineView, StoreLocale } from "@/types/merch";
 
+type View =
+  | "catalog"
+  | "confirmation"
+  | "placed"
+  | "orders"
+  | "admin"
+  | "admin-order"
+  | "admin-products"
+  | "admin-editions";
+
 const locale = computed<StoreLocale>(() => "fr");
-const t = computed(() => merchCopy[locale.value]);
+const {
+  editions,
+  currentEdition,
+  isCreditKnown,
+  companyCredit,
+  getEdition,
+  loadEditions,
+  addEdition,
+  saveEdition,
+  removeEdition,
+} = useEditions();
+const t = computed(() => createMerchCopy(currentEdition.value)[locale.value]);
+const intlLocale = computed(() => (locale.value === "fr" ? "fr-CA" : "en-CA"));
 
 const formatCurrency = computed(
   () =>
@@ -442,18 +517,38 @@ const formatCurrency = computed(
     }),
 );
 
-const { state, derived, actions } = useMerchStore(products);
-const currentView = ref<
-  "catalog" | "confirmation" | "placed" | "admin" | "admin-order"
->("catalog");
+const {
+  products,
+  shopProducts,
+  suppliers,
+  isLoaded: isCatalogLoaded,
+  hasLoadFailed: hasCatalogLoadFailed,
+  loadProducts,
+  saveProduct,
+  removeProduct,
+  reorderProducts,
+} = useProductCatalog();
+const { state, derived, actions } = useMerchStore(products, companyCredit);
+const currentView = ref<View>("catalog");
 const VIEW_SESSION_KEY = "propulshop-current-view";
-const GLOBAL_VIEW_ONLY_SETTING_KEY = "global_readonly_mode";
-const VIEW_ONLY_CACHE_KEY = "propulshop-global-view-only";
+const EDITING_SESSION_KEY = "propulshop-editing-order";
+const RESTORABLE_VIEWS: View[] = [
+  "confirmation",
+  "placed",
+  "orders",
+  "admin",
+  "admin-products",
+  "admin-editions",
+];
+const EDITIONS_REFRESH_MS = 30000;
+const ADMIN_ORDER_VIEWS: View[] = ["admin", "admin-editions"];
+const adminSections: Array<{ view: View; label: string }> = [
+  { view: "admin", label: "Commandes" },
+  { view: "admin-products", label: "Articles" },
+  { view: "admin-editions", label: "Éditions" },
+];
 const isSubmittingOrder = ref(false);
-const showOverwriteModal = ref(false);
-const lockActionBusy = ref(false);
 const authBusy = ref(true);
-const isViewOnly = ref(false);
 const sessionUser = ref<SessionUser | null>(null);
 const isAdmin = ref(false);
 const adminUsers = ref<
@@ -465,133 +560,197 @@ const adminUsers = ref<
     last_seen_at: string | null;
   }>
 >([]);
-const adminOrders = ref<
-  Array<{
-    id: string;
-    user_name: string;
-    user_email: string | null;
-    item_count: number;
-    total_per_person: number;
-    billable_per_person: number;
-    is_locked: boolean;
-    created_at: string;
-  }>
->([]);
-const adminItemsSummary = ref<
-  Array<{
-    key: string;
-    product_name: string;
-    variants: string;
-    total_quantity: number;
-    order_count: number;
-    supplier: SupplierId | null;
-  }>
->([]);
+const adminStoredOrders = ref<StoredOrder[]>([]);
 const adminLoading = ref(false);
 const adminError = ref<string | null>(null);
-const activeOrderId = ref<string | null>(null);
-const activeOrderLocked = ref(false);
-const activeOrderPlacedAt = ref<string | null>(null);
-const activeOrderConfirmedAt = ref<string | null>(null);
-const activeOrderLockDeadlineAt = ref<string | null>(EDITION.orderDeadline);
-const isPersistingDraft = ref(false);
-const pendingCartAction = ref<null | (() => void)>(null);
 const adminSelectedOrderId = ref<string | null>(null);
+const userOrders = ref<StoredOrder[]>([]);
+const isEditingPlacedOrder = ref(false);
+let pendingOrderSave: Promise<unknown> = Promise.resolve();
 let adminRefreshTimer: number | null = null;
-let viewOnlyRefreshTimer: number | null = null;
-const placedOrderPreview = ref<{
-  cartLines: CartLineView[];
-  subtotal: number;
-  creditUsed: number;
-  creditRemaining: number;
-  walletToPay: number;
-}>({
-  cartLines: [],
-  subtotal: 0,
-  creditUsed: 0,
-  creditRemaining: 0,
-  walletToPay: 0,
-});
-const adminPreview = ref<{
-  cartLines: CartLineView[];
-  subtotal: number;
-  creditUsed: number;
-  creditRemaining: number;
-  walletToPay: number;
-  isOrderLocked: boolean;
-  isLockDeadlinePassed: boolean;
-  lockDeadlineLabel: string;
-  orderStatusMessage: string;
-}>({
-  cartLines: [],
-  subtotal: 0,
-  creditUsed: 0,
-  creditRemaining: 0,
-  walletToPay: 0,
-  isOrderLocked: false,
-  isLockDeadlinePassed: false,
-  lockDeadlineLabel: "",
-  orderStatusMessage: "",
-});
+let editionsRefreshTimer: number | null = null;
 
 // La sélection de départ de la fiche produit: la couleur choisie sur la carte.
 const activeProductInitialOptions = ref<Record<string, string>>({});
-const welcomeCredit = computed(() => formatCredit(locale.value));
-const welcomeDeadline = computed(() => formatDeadlineLong(locale.value));
+const welcomeCredit = computed(() =>
+  formatCreditAmount(currentEdition.value.creditPerEmployee, locale.value),
+);
+const welcomeDeadline = computed(() =>
+  formatDeadlineDate(currentEdition.value.orderDeadline, locale.value, "long"),
+);
 
-// `null` tant que la date limite est à déterminer.
-const lockDeadlineDate = computed(() =>
-  activeOrderLockDeadlineAt.value
-    ? new Date(activeOrderLockDeadlineAt.value)
-    : null,
+const isAdminView = computed(() => currentView.value.startsWith("admin"));
+const activeAdminSection = computed<View>(() =>
+  currentView.value === "admin-order" ? "admin" : currentView.value,
 );
-const lockDeadlineLabel = computed(
-  () =>
-    lockDeadlineDate.value?.toLocaleString(
-      locale.value === "fr" ? "fr-CA" : "en-CA",
-      {
-        dateStyle: "long",
-        timeStyle: "short",
-      },
-    ) ?? t.value.toBeDetermined,
-);
-const isLockDeadlinePassed = computed(() =>
-  lockDeadlineDate.value
-    ? Date.now() >= lockDeadlineDate.value.getTime()
-    : false,
-);
-// Le panier se remplit sans connexion; la connexion n'est exigée qu'au
-// moment de confirmer la commande (voir requireSignIn).
-const isOrderEditable = computed(() => true);
 const isReadOnlyForCurrentUser = computed(
-  () => isViewOnly.value,
+  () => !currentEdition.value.isOpen || isDeadlinePassed(currentEdition.value),
 );
-const orderStatusMessage = computed(() => {
-  if (!activeOrderConfirmedAt.value) {
-    return t.value.orderNoDraftStatus;
+const activeOrder = computed(
+  () =>
+    userOrders.value.find(
+      (order) => order.edition === currentEdition.value.number,
+    ) ?? null,
+);
+const isOrderPlaced = computed(() => Boolean(activeOrder.value?.placedAt));
+const placedOrderLines = computed<CartLineView[]>(() =>
+  isOrderPlaced.value
+    ? (activeOrder.value?.items ?? []).map((item) =>
+        toOrderLineView(item, products.value),
+      )
+    : [],
+);
+const formatPlacedDate = (placedAt: string) =>
+  new Date(placedAt).toLocaleDateString(intlLocale.value, {
+    dateStyle: "long",
+  });
+const orderPlacedLabel = computed(() =>
+  activeOrder.value?.placedAt
+    ? `${t.value.orderPlacedOn} ${formatPlacedDate(activeOrder.value.placedAt)}.`
+    : "",
+);
+const orderHistory = computed(() =>
+  userOrders.value
+    .filter((order) => order.placedAt)
+    .map((order) => {
+      const edition = getEdition(order.edition);
+      const billing = computeBillableByPerson(
+        order.subtotal,
+        edition.creditPerEmployee ?? 0,
+      );
+      return {
+        id: order.id,
+        editionName: getEditionName(edition.number, locale.value),
+        isCurrentEdition: edition.number === currentEdition.value.number,
+        isCreditKnown: edition.creditPerEmployee !== null,
+        placedLabel: `${t.value.orderPlacedOn} ${formatPlacedDate(order.placedAt ?? "")}`,
+        lines: order.items.map((item) => toOrderLineView(item, products.value)),
+        subtotal: billing.total,
+        creditUsed: billing.total - billing.billable,
+        walletToPay: billing.billable,
+      };
+    }),
+);
+const catalogStatusMessage = computed(() => {
+  if (isCatalogLoaded.value) {
+    return "";
   }
-  return `${t.value.orderPlacedStatus} ${new Date(activeOrderConfirmedAt.value).toLocaleString(locale.value === "fr" ? "fr-CA" : "en-CA")}.`;
+  if (!hasCatalogLoadFailed.value || authBusy.value) {
+    return t.value.catalogLoading;
+  }
+  return sessionUser.value
+    ? t.value.catalogUnavailable
+    : t.value.catalogSignInRequired;
 });
 
-const buildOrderStatusMessage = (input: {
-  activeOrderId: string | null;
-  placedAt: string | null;
-}) => {
-  if (!input.activeOrderId) {
-    return t.value.orderNoDraftStatus;
-  }
-  if (input.placedAt) {
-    return `${t.value.orderPlacedStatus} ${new Date(input.placedAt).toLocaleString(locale.value === "fr" ? "fr-CA" : "en-CA")}.`;
-  }
-  return t.value.orderUnlockedStatus;
-};
+const adminUserNames = computed(
+  () => new Map(adminUsers.value.map((user) => [user.user_id, user.display_name])),
+);
+const adminOrders = computed(() =>
+  adminStoredOrders.value.map((order) => {
+    const billing = computeBillableByPerson(
+      order.subtotal,
+      getEdition(order.edition).creditPerEmployee ?? 0,
+    );
+    return {
+      id: order.id,
+      edition: order.edition,
+      user_id: order.userId,
+      user_name:
+        adminUserNames.value.get(order.userId) ??
+        order.userEmail?.split("@")[0] ??
+        "-",
+      user_email: order.userEmail,
+      item_count: order.itemCount,
+      total_per_person: billing.total,
+      billable_per_person: billing.billable,
+      is_placed: Boolean(order.placedAt),
+      created_at: order.createdAt,
+    };
+  }),
+);
+const adminItemsSummary = computed(() => {
+  const summaryByKey = new Map<
+    string,
+    {
+      key: string;
+      edition: number;
+      product_name: string;
+      variants: string;
+      total_quantity: number;
+      order_ids: Set<string>;
+      supplier: string | null;
+      supplier_variants: string;
+      supplier_url: string | null;
+    }
+  >();
 
-const toggleViewOnly = () => {
-  if (!isAdmin.value) {
-    return;
+  for (const order of adminStoredOrders.value) {
+    if (!order.placedAt) {
+      continue;
+    }
+    for (const item of order.items) {
+      const line = toOrderLineView(item, products.value);
+      const variants =
+        formatVariantChips(getVariantChips(line, locale.value)) || "Défaut";
+      const supplier = line.product.supplier ?? null;
+      const key = `${order.edition}::${supplier ?? "-"}::${item.productName}::${variants}`;
+      const existing = summaryByKey.get(key);
+      if (existing) {
+        existing.total_quantity += item.quantity;
+        existing.order_ids.add(order.id);
+        continue;
+      }
+      summaryByKey.set(key, {
+        key,
+        edition: order.edition,
+        product_name: item.productName,
+        variants,
+        total_quantity: item.quantity,
+        order_ids: new Set([order.id]),
+        supplier,
+        supplier_variants: formatVariantChips(
+          getVariantChips(line, locale.value, "supplier"),
+        ),
+        supplier_url: line.product.supplierUrl ?? null,
+      });
+    }
   }
-  void persistGlobalViewOnlySetting(!isViewOnly.value);
-};
+
+  return Array.from(summaryByKey.values())
+    .map(({ order_ids, ...entry }) => ({
+      ...entry,
+      order_count: order_ids.size,
+    }))
+    .sort((a, b) => b.total_quantity - a.total_quantity);
+});
+const adminOrderCountByEdition = computed(() => {
+  const countByEdition = new Map<number, number>();
+  for (const order of adminStoredOrders.value) {
+    countByEdition.set(
+      order.edition,
+      (countByEdition.get(order.edition) ?? 0) + 1,
+    );
+  }
+  return countByEdition;
+});
+const adminSelectedOrder = computed(
+  () =>
+    adminStoredOrders.value.find(
+      (order) => order.id === adminSelectedOrderId.value,
+    ) ?? null,
+);
+const adminOrderLines = computed<CartLineView[]>(() =>
+  (adminSelectedOrder.value?.items ?? []).map((item) =>
+    toOrderLineView(item, products.value),
+  ),
+);
+const adminOrderHasSuppliers = computed(
+  () =>
+    getEdition(
+      adminSelectedOrder.value?.edition ?? currentEdition.value.number,
+    ).hasSuppliers,
+);
 
 const onOpenProduct = (
   productId: string,
@@ -608,11 +767,8 @@ const onQuickAdd = (
   if (isReadOnlyForCurrentUser.value) {
     return;
   }
-  if (!ensureOrderEditable()) {
-    return;
-  }
 
-  const product = products.find((item) => item.id === productId);
+  const product = products.value.find((item) => item.id === productId);
   if (!product) {
     return;
   }
@@ -633,7 +789,7 @@ const onQuickAdd = (
     }),
   );
 
-  runCartActionOrPromptOverwrite(() => {
+  runCartAction(() => {
     actions.addToCart(productId, normalizeSelectedOptions(selectedOptions), 1);
     actions.enqueueToast(t.value.addedToCart);
     void persistCartDraft();
@@ -646,9 +802,6 @@ const onAddToCart = (input: {
   quantity: number;
 }) => {
   if (isReadOnlyForCurrentUser.value) {
-    return;
-  }
-  if (!ensureOrderEditable()) {
     return;
   }
   if (input.productId === "gift-card") {
@@ -666,7 +819,7 @@ const onAddToCart = (input: {
       return;
     }
   }
-  runCartActionOrPromptOverwrite(() => {
+  runCartAction(() => {
     actions.addToCart(
       input.productId,
       normalizeSelectedOptions(input.selectedOptions),
@@ -681,9 +834,6 @@ const onResetCart = () => {
   if (isReadOnlyForCurrentUser.value) {
     return;
   }
-  if (!ensureOrderEditable()) {
-    return;
-  }
   actions.resetCart();
   void persistCartDraft();
 };
@@ -692,18 +842,12 @@ const onRemoveCartItem = (cartItemId: string) => {
   if (isReadOnlyForCurrentUser.value) {
     return;
   }
-  if (!ensureOrderEditable()) {
-    return;
-  }
   actions.removeCartItem(cartItemId);
   void persistCartDraft();
 };
 
 const onUpdateCartItemQuantity = (cartItemId: string, nextQuantity: number) => {
   if (isReadOnlyForCurrentUser.value) {
-    return;
-  }
-  if (!ensureOrderEditable()) {
     return;
   }
   actions.updateCartItemQuantity(cartItemId, nextQuantity);
@@ -715,9 +859,6 @@ const onUpdateCartItemVariants = (
   nextSelectedOptions: Record<string, string>,
 ) => {
   if (isReadOnlyForCurrentUser.value) {
-    return;
-  }
-  if (!ensureOrderEditable()) {
     return;
   }
   actions.updateCartItemVariants(
@@ -743,241 +884,41 @@ const onBackToCatalog = () => {
   currentView.value = "catalog";
 };
 
-const onUnlockAndBackToCatalog = async () => {
-  await onToggleOrderLock();
+const onOpenOrders = () => {
+  currentView.value = "orders";
+};
+
+const onStartEditingOrder = () => {
+  if (!activeOrder.value?.placedAt || isReadOnlyForCurrentUser.value) {
+    return;
+  }
+  actions.replaceCart(
+    activeOrder.value.items.map((item) => toCartItem(item, products.value)),
+  );
+  isEditingPlacedOrder.value = true;
   currentView.value = "catalog";
 };
 
-const onOpenDashboard = () => {
-  currentView.value = activeOrderConfirmedAt.value ? "placed" : "confirmation";
+const onCancelEdit = () => {
+  isEditingPlacedOrder.value = false;
+  actions.replaceCart([]);
+  actions.setCartOpen(false);
+  currentView.value = "catalog";
 };
 
-const runCartActionOrPromptOverwrite = (action: () => void) => {
-  if (activeOrderConfirmedAt.value) {
-    pendingCartAction.value = action;
-    showOverwriteModal.value = true;
-    return;
+const runCartAction = (action: () => void) => {
+  if (isOrderPlaced.value && !isEditingPlacedOrder.value) {
+    onStartEditingOrder();
+    actions.enqueueToast(t.value.orderEditStarted);
   }
   action();
 };
 
-const onConfirmOverwriteOrder = () => {
-  showOverwriteModal.value = false;
-  activeOrderConfirmedAt.value = null;
-  activeOrderPlacedAt.value = null;
-  placedOrderPreview.value = {
-    cartLines: [],
-    subtotal: 0,
-    creditUsed: 0,
-    creditRemaining: 0,
-    walletToPay: 0,
-  };
-  const action = pendingCartAction.value;
-  pendingCartAction.value = null;
-  action?.();
-};
-
-const onGoToExistingOrderFromModal = () => {
-  showOverwriteModal.value = false;
-  pendingCartAction.value = null;
-  currentView.value = "placed";
-};
-
-const onCancelOverwriteModal = () => {
-  showOverwriteModal.value = false;
-  pendingCartAction.value = null;
-};
-
-const onToggleOrderLock = async () => {
-  if (isReadOnlyForCurrentUser.value) {
-    return;
-  }
-  if (!sessionUser.value || lockActionBusy.value) {
-    return;
-  }
-
-  if (!activeOrderConfirmedAt.value) {
-    await submitOrder();
-    return;
-  }
-
-  if (!activeOrderId.value) {
-    return;
-  }
-
-  lockActionBusy.value = true;
-  try {
-    const orderResult = await neonClient
-      .from("orders")
-      .select("raw_payload")
-      .eq("id", activeOrderId.value)
-      .eq("user_id", sessionUser.value.id)
-      .single();
-    if (orderResult.error) {
-      throw orderResult.error;
-    }
-
-    const currentRawPayload = (
-      orderResult.data as { raw_payload?: unknown } | null
-    )?.raw_payload;
-    const nextRawPayload =
-      currentRawPayload && typeof currentRawPayload === "object"
-        ? {
-            ...(currentRawPayload as Record<string, unknown>),
-            confirmedAt: null,
-          }
-        : { confirmedAt: null };
-
-    const updateOrder = await neonClient
-      .from("orders")
-      .update({
-        submitted_at: new Date().toISOString(),
-        is_locked: false,
-        locked_at: null,
-        raw_payload: nextRawPayload,
-      })
-      .eq("id", activeOrderId.value)
-      .eq("user_id", sessionUser.value.id);
-    if (updateOrder.error) {
-      throw updateOrder.error;
-    }
-
-    activeOrderConfirmedAt.value = null;
-    await loadCurrentUserOrder();
-    actions.setCartOpen(false);
-    actions.enqueueToast(t.value.reopenOrder);
-  } catch (error) {
-    console.error(error);
-    actions.enqueueToast(t.value.orderSendFailed);
-  } finally {
-    lockActionBusy.value = false;
-  }
-};
-
-const onBackFromAdminOrder = () => {
-  currentView.value = "admin";
-};
-
-const onOpenAdminOrder = async (orderId: string) => {
+const onOpenAdminOrder = (orderId: string) => {
   if (!isAdmin.value) {
     return;
   }
-
-  const orderResult = await neonClient
-    .from("orders")
-    .select(
-      "id,subtotal,credit_used,credit_remaining,wallet_to_pay,raw_payload",
-    )
-    .eq("id", orderId)
-    .single();
-  if (orderResult.error || !orderResult.data) {
-    actions.enqueueToast(t.value.orderSendFailed);
-    return;
-  }
-
-  const labelsByCartLineId = new Map<string, Record<string, string>>();
-  const rawPayload = (orderResult.data as { raw_payload?: unknown })
-    .raw_payload;
-  if (rawPayload && typeof rawPayload === "object") {
-    const payloadItems = (rawPayload as Record<string, unknown>).items;
-    if (Array.isArray(payloadItems)) {
-      for (const item of payloadItems) {
-        if (!item || typeof item !== "object") {
-          continue;
-        }
-        const casted = item as Record<string, unknown>;
-        const id = typeof casted.id === "string" ? casted.id : null;
-        const labels =
-          casted.selectedOptionLabels &&
-          typeof casted.selectedOptionLabels === "object"
-            ? (casted.selectedOptionLabels as Record<string, string>)
-            : null;
-        if (!id || !labels) {
-          continue;
-        }
-        labelsByCartLineId.set(id, labels);
-      }
-    }
-  }
-
-  const itemsResult = await neonClient
-    .from("order_items")
-    .select(
-      "id,cart_line_id,product_id,product_name,quantity,line_total,selected_options",
-    )
-    .eq("order_id", orderId);
-  if (itemsResult.error) {
-    actions.enqueueToast(t.value.orderSendFailed);
-    return;
-  }
-
   adminSelectedOrderId.value = orderId;
-  adminPreview.value = {
-    cartLines: (
-      (itemsResult.data ?? []) as Array<{
-        id: string;
-        cart_line_id: string;
-        product_id: string;
-        product_name: string;
-        quantity: number;
-        line_total: number;
-        selected_options: Record<string, string> | null;
-      }>
-    ).map((item) => {
-      const storedOptions = normalizeSelectedOptions(
-        (item.selected_options ?? {}) as Record<string, string>,
-      );
-      const product = findProductByOrderProductId(
-        products,
-        item.product_id,
-        storedOptions,
-      );
-      const selectedOptions = withImpliedOptions(
-        product,
-        item.product_id,
-        storedOptions,
-      );
-      return {
-        id: item.id,
-        quantity: item.quantity,
-        lineTotal: Number(item.line_total),
-        selectedOptions,
-        selectedOptionLabels: labelsByCartLineId.get(item.cart_line_id),
-        product: {
-          id: product?.id,
-          name: product?.name ?? {
-            en: item.product_name,
-            fr: item.product_name,
-          },
-          supplier: product?.supplier ?? null,
-          images: product?.images,
-          imageGallery: product?.imageGallery,
-          variantGroups: product?.variantGroups,
-        },
-      };
-    }),
-    subtotal: Number(
-      (orderResult.data as { subtotal: string | number }).subtotal,
-    ),
-    creditUsed: Number(
-      (orderResult.data as { credit_used: string | number }).credit_used,
-    ),
-    creditRemaining: Number(
-      (orderResult.data as { credit_remaining: string | number })
-        .credit_remaining,
-    ),
-    walletToPay: Number(
-      (orderResult.data as { wallet_to_pay: string | number }).wallet_to_pay,
-    ),
-    isOrderLocked: false,
-    isLockDeadlinePassed: false,
-    lockDeadlineLabel: "",
-    orderStatusMessage: buildOrderStatusMessage({
-      activeOrderId: orderId,
-      placedAt: null,
-    }),
-  };
-
   currentView.value = "admin-order";
 };
 
@@ -987,20 +928,13 @@ const onDeleteAdminOrder = async (orderId: string) => {
   }
 
   try {
-    const deleteOrder = await neonClient
-      .from("orders")
-      .delete()
-      .eq("id", orderId);
-    if (deleteOrder.error) {
-      throw deleteOrder.error;
-    }
-
+    await deleteOrder(orderId);
     if (adminSelectedOrderId.value === orderId) {
       adminSelectedOrderId.value = null;
       currentView.value = "admin";
     }
-    if (activeOrderId.value === orderId) {
-      await loadCurrentUserOrder();
+    if (activeOrder.value?.id === orderId) {
+      await loadUserOrders();
     }
     await loadAdminDashboard();
     actions.enqueueToast("Commande supprimée avec succès.");
@@ -1008,30 +942,6 @@ const onDeleteAdminOrder = async (orderId: string) => {
     console.error(error);
     actions.enqueueToast(t.value.orderSendFailed);
   }
-};
-
-type OrderPayload = {
-  requestId: string;
-  submittedAt: string;
-  locale: StoreLocale;
-  itemCount: number;
-  itemsSummary: string;
-  items: Array<{
-    id: string;
-    productId: string;
-    productName: string;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-    selectedOptions: Record<string, string>;
-    selectedOptionLabels: Record<string, string>;
-  }>;
-  totals: {
-    subtotal: number;
-    creditUsed: number;
-    creditRemaining: number;
-    walletToPay: number;
-  };
 };
 
 const getOrderPayload = (): OrderPayload => ({
@@ -1093,149 +1003,64 @@ const getOrderPayload = (): OrderPayload => ({
   },
 });
 
-const persistCartDraft = async (
-  showErrorToast = false,
-  confirmSelection = false,
-) => {
-  if (!sessionUser.value || isPersistingDraft.value) {
-    return false;
+const enqueueOrderSave = <T,>(task: () => Promise<T>) => {
+  const run = pendingOrderSave.then(task, task);
+  pendingOrderSave = run.catch(() => undefined);
+  return run;
+};
+
+const writeOrder = async (placedAt: string | null) => {
+  if (!sessionUser.value) {
+    return;
+  }
+  const userId = sessionUser.value.id;
+  const existingOrder = activeOrder.value;
+
+  if (derived.cartLines.value.length === 0) {
+    if (existingOrder) {
+      await deleteOrder(existingOrder.id);
+      userOrders.value = userOrders.value.filter(
+        (order) => order.id !== existingOrder.id,
+      );
+    }
+    return;
   }
 
-  isPersistingDraft.value = true;
+  const payload = getOrderPayload();
+  const orderId = await saveOrder({
+    orderId: existingOrder?.id ?? null,
+    userId,
+    userEmail: sessionUser.value.email,
+    edition: currentEdition.value.number,
+    placedAt,
+    payload,
+  });
+  if (!existingOrder) {
+    userOrders.value = [
+      {
+        id: orderId,
+        edition: currentEdition.value.number,
+        userId,
+        userEmail: sessionUser.value.email,
+        itemCount: payload.itemCount,
+        subtotal: payload.totals.subtotal,
+        placedAt,
+        createdAt: payload.submittedAt,
+        items: [],
+      },
+      ...userOrders.value,
+    ];
+  }
+};
+
+const persistCartDraft = async () => {
+  if (!sessionUser.value || !isCatalogLoaded.value || isOrderPlaced.value) {
+    return;
+  }
   try {
-    if (derived.cartLines.value.length === 0) {
-      if (!activeOrderId.value) {
-        return true;
-      }
-
-      const deleteOrder = await neonClient
-        .from("orders")
-        .delete()
-        .eq("id", activeOrderId.value)
-        .eq("user_id", sessionUser.value.id);
-      if (deleteOrder.error) {
-        throw deleteOrder.error;
-      }
-
-      activeOrderId.value = null;
-      activeOrderLocked.value = false;
-      activeOrderPlacedAt.value = null;
-      activeOrderConfirmedAt.value = null;
-      return true;
-    }
-
-    const payload = getOrderPayload();
-    const confirmedAt = confirmSelection ? new Date().toISOString() : null;
-    const shouldLockAfterItems = confirmSelection;
-    const persistedPayload = {
-      ...payload,
-      confirmedAt,
-    };
-    let orderId = activeOrderId.value;
-
-    if (!orderId) {
-      const insertOrder = await neonClient
-        .from("orders")
-        .insert({
-          id: crypto.randomUUID(),
-          request_id: payload.requestId,
-          submitted_at: payload.submittedAt,
-          user_id: sessionUser.value.id,
-          user_email: sessionUser.value.email,
-          locale: payload.locale,
-          item_count: payload.itemCount,
-          items_summary: payload.itemsSummary,
-          subtotal: payload.totals.subtotal,
-          credit_used: payload.totals.creditUsed,
-          credit_remaining: payload.totals.creditRemaining,
-          wallet_to_pay: payload.totals.walletToPay,
-          is_locked: false,
-          locked_at: null,
-          raw_payload: persistedPayload,
-        })
-        .select("id")
-        .single();
-
-      if (insertOrder.error) {
-        throw insertOrder.error;
-      }
-
-      orderId = (insertOrder.data as { id: string }).id;
-      activeOrderId.value = orderId;
-    } else {
-      const updateOrder = await neonClient
-        .from("orders")
-        .update({
-          submitted_at: payload.submittedAt,
-          user_email: sessionUser.value.email,
-          locale: payload.locale,
-          item_count: payload.itemCount,
-          items_summary: payload.itemsSummary,
-          subtotal: payload.totals.subtotal,
-          credit_used: payload.totals.creditUsed,
-          credit_remaining: payload.totals.creditRemaining,
-          wallet_to_pay: payload.totals.walletToPay,
-          is_locked: false,
-          locked_at: null,
-          raw_payload: persistedPayload,
-        })
-        .eq("id", orderId)
-        .eq("user_id", sessionUser.value.id);
-      if (updateOrder.error) {
-        throw updateOrder.error;
-      }
-    }
-
-    const deleteItems = await neonClient
-      .from("order_items")
-      .delete()
-      .eq("order_id", orderId);
-    if (deleteItems.error) {
-      throw deleteItems.error;
-    }
-
-    const insertItems = await neonClient.from("order_items").insert(
-      payload.items.map((item) => ({
-        id: crypto.randomUUID(),
-        order_id: orderId,
-        cart_line_id: item.id,
-        product_id: item.productId,
-        product_name: item.productName,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        line_total: item.lineTotal,
-        selected_options: item.selectedOptions,
-      })),
-    );
-    if (insertItems.error) {
-      throw insertItems.error;
-    }
-
-    if (shouldLockAfterItems) {
-      const lockOrder = await neonClient
-        .from("orders")
-        .update({
-          is_locked: true,
-          locked_at: confirmedAt,
-          raw_payload: persistedPayload,
-        })
-        .eq("id", orderId)
-        .eq("user_id", sessionUser.value.id);
-      if (lockOrder.error) {
-        throw lockOrder.error;
-      }
-    }
-
-    activeOrderConfirmedAt.value = confirmedAt;
-    return true;
+    await enqueueOrderSave(() => writeOrder(null));
   } catch (error) {
     console.error(error);
-    if (showErrorToast) {
-      actions.enqueueToast(t.value.orderSendFailed);
-    }
-    return false;
-  } finally {
-    isPersistingDraft.value = false;
   }
 };
 
@@ -1312,106 +1137,6 @@ const warnPolicyRecursionOnce = (tableName: string) => {
   console.warn(
     `RLS policy recursion detected on ${tableName}. Fix policy in database/neon-schema.sql (drop/recreate admin_users_select).`,
   );
-};
-
-const parseViewOnlySetting = (value: unknown) => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const casted = value as Record<string, unknown>;
-  return casted.enabled === true;
-};
-
-const loadGlobalViewOnlySetting = async () => {
-  const result = await neonClient
-    .from("app_settings")
-    .select("value_json")
-    .eq("setting_key", GLOBAL_VIEW_ONLY_SETTING_KEY)
-    .maybeSingle();
-
-  if (result.error) {
-    if (isMissingTableError(result.error, "app_settings")) {
-      warnMissingTableOnce("app_settings");
-      isViewOnly.value = false;
-      return false;
-    }
-    if (isPermissionDeniedError(result.error, "app_settings")) {
-      console.warn("Permission base de données manquante pour app_settings.");
-      return isViewOnly.value;
-    }
-    throw result.error;
-  }
-
-  isViewOnly.value = parseViewOnlySetting(
-    (result.data as { value_json?: unknown } | null)?.value_json,
-  );
-  return isViewOnly.value;
-};
-
-const persistGlobalViewOnlySetting = async (nextValue: boolean) => {
-  if (!isAdmin.value) {
-    return;
-  }
-
-  const payload = {
-    setting_key: GLOBAL_VIEW_ONLY_SETTING_KEY,
-    value_json: { enabled: nextValue },
-    updated_at: new Date().toISOString(),
-  };
-
-  const updateResult = await neonClient
-    .from("app_settings")
-    .update({
-      value_json: payload.value_json,
-      updated_at: payload.updated_at,
-    })
-    .eq("setting_key", GLOBAL_VIEW_ONLY_SETTING_KEY)
-    .select("setting_key")
-    .maybeSingle();
-
-  if (updateResult.error) {
-    if (isMissingTableError(updateResult.error, "app_settings")) {
-      warnMissingTableOnce("app_settings");
-      actions.enqueueToast(
-        "La table app_settings est manquante. Exécutez database/neon-schema.sql.",
-      );
-      return;
-    }
-    if (isPermissionDeniedError(updateResult.error, "app_settings")) {
-      actions.enqueueToast(
-        "Permission base de données manquante pour app_settings.",
-      );
-      return;
-    }
-    console.error(updateResult.error);
-    actions.enqueueToast(t.value.orderSendFailed);
-    return;
-  }
-
-  if (!updateResult.data) {
-    const insertResult = await neonClient.from("app_settings").insert(payload);
-    if (insertResult.error) {
-      if (isMissingTableError(insertResult.error, "app_settings")) {
-        warnMissingTableOnce("app_settings");
-        actions.enqueueToast(
-          "La table app_settings est manquante. Exécutez database/neon-schema.sql.",
-        );
-        return;
-      }
-      if (isPermissionDeniedError(insertResult.error, "app_settings")) {
-        actions.enqueueToast(
-          "Permission base de données manquante pour app_settings.",
-        );
-        return;
-      }
-      console.error(insertResult.error);
-      actions.enqueueToast(t.value.orderSendFailed);
-      return;
-    }
-  }
-
-  isViewOnly.value = nextValue;
 };
 
 const getDisplayNameFromEmail = (email: string | null, fallbackId: string) => {
@@ -1504,10 +1229,8 @@ const refreshSession = async () => {
 
   if (!user) {
     isAdmin.value = false;
-    activeOrderId.value = null;
-    activeOrderLocked.value = false;
-    activeOrderPlacedAt.value = null;
-    activeOrderConfirmedAt.value = null;
+    userOrders.value = [];
+    isEditingPlacedOrder.value = false;
     return;
   }
 
@@ -1542,39 +1265,16 @@ const refreshSession = async () => {
   }
 };
 
-const loadCurrentUserOrder = async (keepLocalCart = false) => {
+const loadUserOrders = async (keepLocalCart = false) => {
   if (!sessionUser.value) {
     return;
   }
 
-  const orderResult = await neonClient
-    .from("orders")
-    .select("id,raw_payload,is_locked,locked_at")
-    .eq("user_id", sessionUser.value.id)
-    .limit(1);
-
-  if (orderResult.error) {
-    throw orderResult.error;
-  }
-
-  const order =
-    (orderResult.data?.[0] as
-      | { id: string; is_locked: boolean; locked_at: string | null }
-      | undefined) ?? null;
+  userOrders.value = await fetchUserOrders(sessionUser.value.id);
+  const order = activeOrder.value;
 
   if (!order) {
-    activeOrderId.value = null;
-    activeOrderLocked.value = false;
-    activeOrderPlacedAt.value = null;
-    activeOrderConfirmedAt.value = null;
-    activeOrderLockDeadlineAt.value = EDITION.orderDeadline;
-    placedOrderPreview.value = {
-      cartLines: [],
-      subtotal: 0,
-      creditUsed: 0,
-      creditRemaining: 0,
-      walletToPay: 0,
-    };
+    isEditingPlacedOrder.value = false;
     // Premier chargement après la connexion: un panier rempli avant de se
     // connecter devient le brouillon de la commande.
     if (keepLocalCart && derived.cartLines.value.length > 0) {
@@ -1585,137 +1285,22 @@ const loadCurrentUserOrder = async (keepLocalCart = false) => {
     return;
   }
 
-  activeOrderId.value = order.id;
-  activeOrderLocked.value = order.is_locked;
-  activeOrderPlacedAt.value = null;
-  const rawPayload = (
-    orderResult.data?.[0] as { raw_payload?: unknown } | undefined
-  )?.raw_payload;
-  const labelsByCartLineId = new Map<string, Record<string, string>>();
-  if (rawPayload && typeof rawPayload === "object") {
-    const confirmedAt = (rawPayload as Record<string, unknown>).confirmedAt;
-    activeOrderConfirmedAt.value =
-      typeof confirmedAt === "string" && confirmedAt.length > 0
-        ? confirmedAt
-        : order.is_locked
-          ? order.locked_at
-          : null;
-    const payloadItems = (rawPayload as Record<string, unknown>).items;
-    if (Array.isArray(payloadItems)) {
-      for (const item of payloadItems) {
-        if (!item || typeof item !== "object") {
-          continue;
-        }
-        const casted = item as Record<string, unknown>;
-        const id = typeof casted.id === "string" ? casted.id : null;
-        const labels =
-          casted.selectedOptionLabels &&
-          typeof casted.selectedOptionLabels === "object"
-            ? (casted.selectedOptionLabels as Record<string, string>)
-            : null;
-        if (!id || !labels) {
-          continue;
-        }
-        labelsByCartLineId.set(id, labels);
-      }
+  if (order.placedAt) {
+    if (
+      !isEditingPlacedOrder.value ||
+      derived.cartLines.value.length === 0
+    ) {
+      isEditingPlacedOrder.value = false;
+      actions.replaceCart([]);
     }
-  } else {
-    activeOrderConfirmedAt.value = null;
+    return;
   }
 
-  const itemsResult = await neonClient
-    .from("order_items")
-    .select("cart_line_id,product_id,quantity,selected_options")
-    .eq("order_id", order.id);
-  if (itemsResult.error) {
-    throw itemsResult.error;
-  }
-
-  const cartItems = (
-    (itemsResult.data ?? []) as Array<{
-      cart_line_id: string;
-      product_id: string;
-      quantity: number;
-      selected_options: Record<string, string>;
-    }>
-  ).map((item) => {
-    const storedOptions = normalizeSelectedOptions(
-      (item.selected_options ?? {}) as Record<string, string>,
-    );
-    const catalogProduct = findProductByOrderProductId(
-      products,
-      item.product_id,
-      storedOptions,
-    );
-    const selectedOptions = withImpliedOptions(
-      catalogProduct,
-      item.product_id,
-      storedOptions,
-    );
-    const catalogProductId = catalogProduct?.id ?? item.product_id;
-    return {
-      id: buildCartItemId(catalogProductId, selectedOptions),
-      productId: catalogProductId,
-      quantity: item.quantity,
-      selectedOptions,
-      selectedOptionLabels: labelsByCartLineId.get(item.cart_line_id),
-    };
-  });
-
-  if (activeOrderConfirmedAt.value) {
-    const lines = cartItems
-      .map((item) => {
-        const product = findProductByOrderProductId(
-          products,
-          item.productId,
-          item.selectedOptions,
-        );
-        if (!product) {
-          return null;
-        }
-
-        const orderSelection = resolveOrderProductSelection(
-          product,
-          item.selectedOptions,
-        );
-        return {
-          id: item.id,
-          quantity: item.quantity,
-          lineTotal: item.quantity * orderSelection.unitPrice,
-          selectedOptions: item.selectedOptions,
-          selectedOptionLabels: item.selectedOptionLabels,
-          product,
-        };
-      })
-      .filter((line): line is NonNullable<typeof line> => line !== null);
-
-    const subtotal = lines.reduce((total, line) => total + line.lineTotal, 0);
-    const creditUsed = Math.min(COMPANY_CREDIT, subtotal);
-    const creditRemaining = Math.max(COMPANY_CREDIT - creditUsed, 0);
-    const walletToPay = Math.max(subtotal - COMPANY_CREDIT, 0);
-
-    placedOrderPreview.value = {
-      cartLines: lines,
-      subtotal,
-      creditUsed,
-      creditRemaining,
-      walletToPay,
-    };
-    actions.replaceCart([]);
-  } else {
-    placedOrderPreview.value = {
-      cartLines: [],
-      subtotal: 0,
-      creditUsed: 0,
-      creditRemaining: 0,
-      walletToPay: 0,
-    };
-    actions.replaceCart(cartItems);
-  }
+  isEditingPlacedOrder.value = false;
+  actions.replaceCart(
+    order.items.map((item) => toCartItem(item, products.value)),
+  );
 };
-
-// Le panier est local tant qu'on n'est pas connecté: rien à exiger ici.
-const ensureOrderEditable = () => true;
 
 // Confirmer une commande exige un compte: on envoie vers la connexion
 // Google. Le panier survit à l'aller-retour (sessionStorage).
@@ -1757,11 +1342,8 @@ const onSignOut = async () => {
   } finally {
     sessionUser.value = null;
     isAdmin.value = false;
-    activeOrderId.value = null;
-    activeOrderLocked.value = false;
-    activeOrderPlacedAt.value = null;
-    activeOrderConfirmedAt.value = null;
-    activeOrderLockDeadlineAt.value = EDITION.orderDeadline;
+    userOrders.value = [];
+    isEditingPlacedOrder.value = false;
     actions.replaceCart([]);
     currentView.value = "catalog";
   }
@@ -1779,19 +1361,12 @@ const loadAdminDashboard = async () => {
       .from("app_users")
       .select("user_id,email,display_name,created_at,last_seen_at")
       .order("last_seen_at", { ascending: false });
-    if (
-      usersResult.error &&
-      isPolicyRecursionError(usersResult.error, "admin_users")
-    ) {
-      warnPolicyRecursionOnce("admin_users");
-      adminUsers.value = [];
-    }
-    if (
-      usersResult.error &&
-      !isMissingTableError(usersResult.error, "app_users")
-    ) {
+    if (usersResult.error) {
       if (isPolicyRecursionError(usersResult.error, "admin_users")) {
-        // Continue loading orders even if app_users is blocked by recursive policy.
+        warnPolicyRecursionOnce("admin_users");
+        adminUsers.value = [];
+      } else if (isMissingTableError(usersResult.error, "app_users")) {
+        warnMissingTableOnce("app_users");
       } else if (isPermissionDeniedError(usersResult.error, "app_users")) {
         adminError.value =
           "Permission base de données manquante pour app_users.";
@@ -1799,147 +1374,15 @@ const loadAdminDashboard = async () => {
       } else {
         throw usersResult.error;
       }
-    }
-    if (
-      usersResult.error &&
-      isMissingTableError(usersResult.error, "app_users")
-    ) {
-      warnMissingTableOnce("app_users");
+    } else {
+      adminUsers.value = (usersResult.data ?? []) as typeof adminUsers.value;
     }
 
-    const ordersResult = await neonClient
-      .from("orders")
-      .select("id,user_id,user_email,item_count,subtotal,is_locked,created_at")
-      .order("created_at", { ascending: false });
-    if (ordersResult.error) {
-      if (isPermissionDeniedError(ordersResult.error, "orders")) {
-        adminError.value = "Permission base de données manquante pour orders.";
-        return;
-      }
-      throw ordersResult.error;
-    }
-
-    const orderItemsResult = await neonClient
-      .from("order_items")
-      .select("order_id,product_id,product_name,quantity,selected_options");
-    if (orderItemsResult.error) {
-      throw orderItemsResult.error;
-    }
-
-    if (!usersResult.error) {
-      adminUsers.value = (usersResult.data ?? []) as Array<{
-        user_id: string;
-        email: string;
-        display_name: string;
-        created_at: string;
-        last_seen_at: string | null;
-      }>;
-    }
-    const usersById = new Map(
-      adminUsers.value.map((user) => [user.user_id, user.display_name]),
-    );
-    adminOrders.value = (
-      (ordersResult.data ?? []) as Array<{
-        id: string;
-        user_id: string;
-        user_email: string | null;
-        item_count: number;
-        subtotal: string | number;
-        is_locked: boolean;
-        created_at: string;
-      }>
-    ).map((order) => {
-      const billing = computeBillableByPerson(
-        Number(order.subtotal),
-        COMPANY_CREDIT,
-      );
-      return {
-        id: order.id,
-        user_name:
-          usersById.get(order.user_id) ??
-          order.user_email?.split("@")[0] ??
-          "-",
-        user_email: order.user_email,
-        item_count: order.item_count,
-        total_per_person: billing.total,
-        billable_per_person: billing.billable,
-        is_locked: order.is_locked,
-        created_at: order.created_at,
-      };
-    });
-
-    const itemSummaryMap = new Map<
-      string,
-      {
-        key: string;
-        product_name: string;
-        variants: string;
-        total_quantity: number;
-        order_ids: Set<string>;
-        supplier: SupplierId | null;
-      }
-    >();
-
-    (
-      (orderItemsResult.data ?? []) as Array<{
-        order_id: string;
-        product_id: string | null;
-        product_name: string;
-        quantity: number;
-        selected_options: Record<string, string> | null;
-      }>
-    ).forEach((item) => {
-      const storedOptions = normalizeSelectedOptions(
-        (item.selected_options ?? {}) as Record<string, string>,
-      );
-      // Le fournisseur vient de la fiche produit (content/products/*.md).
-      const product = item.product_id
-        ? findProductByOrderProductId(products, item.product_id, storedOptions)
-        : null;
-      const selectedOptions = withImpliedOptions(
-        product,
-        item.product_id ?? "",
-        storedOptions,
-      );
-      const variants =
-        formatVariantChips(
-          getVariantChips(
-            { selectedOptions, product: product ?? {} },
-            locale.value,
-          ),
-        ) || "Défaut";
-      const supplier = product?.supplier ?? null;
-      const key = `${supplier ?? "-"}::${item.product_name}::${variants}`;
-      const existing = itemSummaryMap.get(key);
-      if (existing) {
-        existing.total_quantity += item.quantity;
-        existing.order_ids.add(item.order_id);
-        return;
-      }
-
-      itemSummaryMap.set(key, {
-        key,
-        product_name: item.product_name,
-        variants,
-        total_quantity: item.quantity,
-        order_ids: new Set([item.order_id]),
-        supplier,
-      });
-    });
-
-    adminItemsSummary.value = Array.from(itemSummaryMap.values())
-      .map((entry) => ({
-        key: entry.key,
-        product_name: entry.product_name,
-        variants: entry.variants,
-        total_quantity: entry.total_quantity,
-        order_count: entry.order_ids.size,
-        supplier: entry.supplier,
-      }))
-      .sort((a, b) => b.total_quantity - a.total_quantity);
+    adminStoredOrders.value = await fetchAllOrders();
   } catch (error) {
-    adminError.value =
-      error instanceof Error
+    adminError.value = isPermissionDeniedError(error, "orders")
+      ? "Permission base de données manquante pour orders."
+      : error instanceof Error
         ? error.message
         : "Impossible de charger les données admin";
   } finally {
@@ -1947,19 +1390,20 @@ const loadAdminDashboard = async () => {
   }
 };
 
-const onOpenAdmin = async () => {
+const onOpenAdmin = () => {
   if (!isAdmin.value) {
     return;
   }
   currentView.value = "admin";
-  await loadAdminDashboard();
 };
 
 const submitOrder = async () => {
-  if (isReadOnlyForCurrentUser.value) {
+  if (isReadOnlyForCurrentUser.value || isSubmittingOrder.value) {
     return;
   }
-  if (derived.cartLines.value.length === 0 || isSubmittingOrder.value) {
+  const isCancellingOrder =
+    isEditingPlacedOrder.value && derived.cartLines.value.length === 0;
+  if (derived.cartLines.value.length === 0 && !isCancellingOrder) {
     return;
   }
 
@@ -1969,38 +1413,34 @@ const submitOrder = async () => {
 
   isSubmittingOrder.value = true;
   try {
-    const shouldConfirm = !activeOrderConfirmedAt.value;
-    const persisted = await persistCartDraft(true, shouldConfirm);
-    if (!persisted) {
+    const wasPlaced = isOrderPlaced.value;
+    const placedAt = activeOrder.value?.placedAt ?? new Date().toISOString();
+    await enqueueOrderSave(() => writeOrder(placedAt));
+    isEditingPlacedOrder.value = false;
+    await loadUserOrders();
+
+    if (isCancellingOrder) {
+      actions.enqueueToast(t.value.orderCancelled);
+      currentView.value = "catalog";
       return;
     }
-
-    if (shouldConfirm) {
-      actions.enqueueToast(t.value.orderSent);
-    } else {
-      actions.enqueueToast(t.value.reopenOrder);
-    }
-
-    await loadCurrentUserOrder();
-    currentView.value = shouldConfirm ? "placed" : "confirmation";
+    actions.enqueueToast(wasPlaced ? t.value.orderUpdated : t.value.orderSent);
+    currentView.value = "placed";
+  } catch (error) {
+    console.error(error);
+    actions.enqueueToast(t.value.orderSendFailed);
   } finally {
     isSubmittingOrder.value = false;
   }
 };
 
 onMounted(async () => {
-  if (typeof window !== "undefined") {
-    const savedView = window.sessionStorage.getItem(VIEW_SESSION_KEY);
-    if (
-      savedView === "confirmation" ||
-      savedView === "placed" ||
-      savedView === "admin"
-    ) {
-      currentView.value = savedView;
-    }
-
-    isViewOnly.value = window.localStorage.getItem(VIEW_ONLY_CACHE_KEY) === "1";
+  const savedView = window.sessionStorage.getItem(VIEW_SESSION_KEY) as View;
+  if (RESTORABLE_VIEWS.includes(savedView)) {
+    currentView.value = savedView;
   }
+  isEditingPlacedOrder.value =
+    window.sessionStorage.getItem(EDITING_SESSION_KEY) === "1";
 
   if (window.location.hostname === "127.0.0.1") {
     const normalizedUrl = new URL(window.location.href);
@@ -2010,15 +1450,13 @@ onMounted(async () => {
   }
 
   try {
-    await loadGlobalViewOnlySetting();
     await refreshSession();
-    if (
-      (currentView.value === "admin" || currentView.value === "admin-order") &&
-      !isAdmin.value
-    ) {
+    await loadEditions();
+    if (isAdminView.value && !isAdmin.value) {
       currentView.value = "catalog";
     }
-    await loadCurrentUserOrder(true);
+    await loadProducts();
+    await loadUserOrders(true);
   } catch (error) {
     console.error(error);
   } finally {
@@ -2035,12 +1473,8 @@ watch(currentView, (nextView) => {
   window.sessionStorage.setItem(VIEW_SESSION_KEY, persistedView);
 });
 
-watch(isViewOnly, (nextValue) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(VIEW_ONLY_CACHE_KEY, nextValue ? "1" : "0");
+watch(isEditingPlacedOrder, (nextValue) => {
+  window.sessionStorage.setItem(EDITING_SESSION_KEY, nextValue ? "1" : "0");
 });
 
 watch(
@@ -2051,7 +1485,7 @@ watch(
       adminRefreshTimer = null;
     }
 
-    if (!admin || view !== "admin") {
+    if (!admin || !ADMIN_ORDER_VIEWS.includes(view)) {
       return;
     }
 
@@ -2064,21 +1498,25 @@ watch(
 );
 
 watch(
-  () => sessionUser.value?.id ?? null,
-  async () => {
-    if (typeof window === "undefined") {
+  () => currentEdition.value.number,
+  () => {
+    if (authBusy.value) {
       return;
     }
+    isEditingPlacedOrder.value = false;
+    loadUserOrders().catch(console.error);
+  },
+);
 
-    if (viewOnlyRefreshTimer) {
-      window.clearInterval(viewOnlyRefreshTimer);
-      viewOnlyRefreshTimer = null;
+watch(
+  () => sessionUser.value?.id ?? null,
+  () => {
+    if (editionsRefreshTimer) {
+      window.clearInterval(editionsRefreshTimer);
     }
-
-    await loadGlobalViewOnlySetting();
-    viewOnlyRefreshTimer = window.setInterval(() => {
-      void loadGlobalViewOnlySetting();
-    }, 30000);
+    editionsRefreshTimer = window.setInterval(() => {
+      void loadEditions();
+    }, EDITIONS_REFRESH_MS);
   },
   { immediate: true },
 );
@@ -2088,9 +1526,9 @@ onUnmounted(() => {
     window.clearInterval(adminRefreshTimer);
     adminRefreshTimer = null;
   }
-  if (viewOnlyRefreshTimer) {
-    window.clearInterval(viewOnlyRefreshTimer);
-    viewOnlyRefreshTimer = null;
+  if (editionsRefreshTimer) {
+    window.clearInterval(editionsRefreshTimer);
+    editionsRefreshTimer = null;
   }
 });
 </script>

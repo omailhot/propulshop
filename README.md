@@ -4,9 +4,9 @@ Boutique interne des employés, à la charte du livre de marque (édition 1, nov
 
 | Pour changer... | Aller dans... |
 |---|---|
-| Le montant du crédit, la date limite | `src/config/edition.ts` |
-| Un produit, ses couleurs, son fournisseur | `content/products/*.md` (guide: `content/README.md`) |
-| La liste des fournisseurs | `src/config/suppliers.ts` |
+| Le montant du crédit, la date limite, l'ouverture des commandes, une nouvelle édition | Page admin « Éditions » (table `editions`): le plus grand numéro est l'édition en cours |
+| Un article, ses options, ses images, son fournisseur | Page admin « Articles » (table `products`) |
+| Le catalogue de départ d'une base neuve | `database/seed-products.sql` |
 | Les couleurs, la typographie, les rayons, les ombres | `src/styles.css` (jetons de marque) |
 | Le logo | `src/assets/brand/` |
 

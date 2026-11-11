@@ -16,6 +16,7 @@ if (!authUrl || !dataApiUrl) {
 export const neonClient = createClient({
 	auth: {
 		url: authUrl ?? "",
+		allowAnonymous: true,
 	},
 	dataApi: {
 		url: dataApiUrl ?? "",

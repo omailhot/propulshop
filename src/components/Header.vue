@@ -49,21 +49,32 @@
 
         <template v-if="isAuthenticated">
           <button
-            v-if="isAdmin && view !== 'admin'"
+            v-if="view !== 'orders'"
+            type="button"
+            :class="linkClass"
+            @click="$emit('open-orders')"
+          >
+            {{ ordersLabel }}
+          </button>
+
+          <button
+            v-if="isAdmin && !isAdminView"
             type="button"
             :class="linkClass"
             @click="$emit('open-admin')"
           >
             {{ adminLabel ?? "Admin" }}
           </button>
+
           <button
-            v-if="isAdmin && view === 'admin'"
+            v-if="isAdmin && isAdminView"
             type="button"
             :class="linkClass"
             @click="$emit('open-catalog')"
           >
             {{ catalogLabel ?? "Catalog" }}
           </button>
+
           <button
             type="button"
             :class="linkClass"
@@ -87,18 +98,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import iconUrl from "@/assets/brand/propulso-icon.svg";
 import wordmarkUrl from "@/assets/brand/propulso-wordmark.svg";
 import { m } from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 
-defineProps<{
+const props = defineProps<{
   title?: string;
   subtitle?: string;
   sessionEmail?: string | null;
   isAuthenticated?: boolean;
   isAdmin?: boolean;
-  view?: "catalog" | "confirmation" | "placed" | "admin" | "admin-order";
+  view?: string;
   authBusy?: boolean;
   connectGoogleLabel?: string;
   connectingLabel?: string;
@@ -106,6 +119,7 @@ defineProps<{
   signOutLabel?: string;
   adminLabel?: string;
   catalogLabel?: string;
+  ordersLabel?: string;
   /** Affiche le crédit restant. */
   showCredit?: boolean;
   creditLabel?: string;
@@ -116,6 +130,7 @@ defineEmits<{
   "connect-google": [];
   "sign-out": [];
   "open-admin": [];
+  "open-orders": [];
   "open-catalog": [];
   "open-home": [];
 }>();
@@ -124,4 +139,6 @@ const linkClass =
   "text-foreground hover:bg-encre/8 focus-visible:ring-ring/40 inline-flex h-10 cursor-pointer items-center rounded-md px-3 outline-none transition-colors focus-visible:ring-[3px]";
 
 const localizedHome = localizeHref("/");
+
+const isAdminView = computed(() => Boolean(props.view?.startsWith("admin")));
 </script>
