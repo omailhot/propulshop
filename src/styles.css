@@ -18,6 +18,7 @@
    ========================================================================== */
 
 :root {
+  --cart-panel-clearance: 0px;
   /* 1. Palette: les six couleurs du livre, plus l'encre du texte. */
   --p-grege: #f4eee6; /* le fond. Ni beige, ni froid. */
   --p-orange: #f0752b; /* décoratif: jamais du texte, jamais sous du texte. */
@@ -340,6 +341,23 @@
     color: var(--p-ocre);
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  .has-cart-panel {
+    --cart-panel-width: 18rem;
+    --cart-panel-offset: 1rem;
+    --cart-panel-gap: 2rem;
+    --content-edge-offset: max(2rem, calc((100vw - 72rem) / 2 + 2rem));
+
+    @media (width >= 64rem) {
+      --cart-panel-clearance: max(
+        0px,
+        calc(
+          var(--cart-panel-width) + var(--cart-panel-offset) +
+            var(--cart-panel-gap) - var(--content-edge-offset)
+        )
+      );
+    }
   }
 
   .animate-fade-up {

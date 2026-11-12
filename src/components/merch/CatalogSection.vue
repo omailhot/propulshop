@@ -2,7 +2,7 @@
   <section class="animate-fade-up-delay" aria-labelledby="catalog-heading">
     <!-- Titre, puis les catégories en simples onglets texte. -->
     <div
-      class="flex flex-col gap-5 border-b sm:flex-row sm:items-end sm:justify-between"
+      class="mr-(--cart-panel-clearance) flex flex-col gap-5 border-b sm:flex-row sm:items-end sm:justify-between"
     >
       <h2 id="catalog-heading" class="t-h2 pb-0 sm:pb-4">
         {{ t.catalogTitle }}
