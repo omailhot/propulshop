@@ -293,7 +293,7 @@ export const createMerchCopy = (
 			),
 			loggedOutBannerTitle: "Sign in with your @propulso.io e-mail",
 			loggedOutBannerBody:
-				"Orders from non-Propulso accounts are not processed. Connect your Propulso account before submitting.",
+				"Orders from non-Propulso accounts are not processed.",
 			existingOrderBannerTitle: "Your order is placed.",
 			viewMyOrder: "View my order",
 			placedPageTitle: "Order placed",
@@ -467,7 +467,7 @@ export const createMerchCopy = (
 			),
 			loggedOutBannerTitle: "Connectez-vous avec votre courriel @propulso.io",
 			loggedOutBannerBody:
-				"Les commandes provenant d'un autre compte ne seront pas traitées. Connectez votre compte Propulso avant l'envoi.",
+				"Les commandes provenant d'un autre compte ne seront pas traitées.",
 			existingOrderBannerTitle: "Votre commande est placée.",
 			viewMyOrder: "Voir ma commande",
 			placedPageTitle: "Commande placée",
@@ -502,7 +502,7 @@ export const createMerchCopy = (
 			welcomeBody: `Le comité social est fier de vous présenter le catalogue de la ${getEditionOrdinal(edition.number, "fr")} édition du Propulshop. Les prix affichés comprennent les taxes.`,
 			welcomeCreditLabel: "Crédit par employé",
 			welcomeCreditNote: "Utilisable pour cette édition seulement",
-			welcomeDeadlineLabel: "Date limite pour commander",
+			welcomeDeadlineLabel: "Date limite",
 			welcomeDeadlineNote: "Verrouillez votre commande avant cette date",
 			welcomeFinePrint:
 				"Le crédit restant est non transférable à la prochaine édition, non monnayable et non remboursable.",

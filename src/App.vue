@@ -38,8 +38,7 @@
     :aria-label="t.loggedOutBannerTitle"
   >
     <div
-      class="mx-auto flex max-w-6xl flex-col items-start gap-2.5 py-3 pr-32 pl-4 sm:flex-row sm:items-center sm:gap-5 sm:pr-64 sm:pl-8 lg:pr-[calc(var(--cart-panel-clearance)+2rem)]"
-      :class="{ 'has-cart-panel': !isReadOnlyForCurrentUser }"
+      class="mx-auto flex max-w-6xl flex-col items-start gap-2.5 py-3 pr-32 pl-4 sm:flex-row sm:items-center sm:gap-5 sm:pr-64 sm:pl-8 lg:pr-8"
     >
       <p class="text-foreground text-sm leading-snug">
         <span class="font-semibold">{{ t.loggedOutBannerTitle }}.</span>
@@ -140,7 +139,7 @@
 
         <div
           v-if="isEditingPlacedOrder"
-          class="bg-ocre-pale mr-(--cart-panel-clearance) mb-6 flex flex-col gap-3 rounded-lg p-4"
+          class="bg-ocre-pale mb-6 flex flex-col gap-3 rounded-lg p-4"
           role="status"
         >
           <div class="flex items-start gap-3">
@@ -162,7 +161,7 @@
 
         <div
           v-else-if="isOrderPlaced"
-          class="mr-(--cart-panel-clearance) mb-6 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+          class="mb-6 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div class="flex items-start gap-3">
             <span
@@ -192,57 +191,166 @@
           </div>
         </div>
 
-        <!-- L'accueil: un titre et une ligne de faits. Rien d'autre. -->
-        <section class="pr-(--cart-panel-clearance) pb-8 sm:pb-10">
-          <h1>
-            <ShopLogo />
-          </h1>
+        <div class="relative">
+          <div
+            v-if="!isReadOnlyForCurrentUser && !state.cartOpen.value"
+            class="pointer-events-none absolute inset-y-0 right-[calc(1rem-var(--content-edge-offset))] z-30 hidden w-72 lg:block"
+          >
+            <aside
+              class="bg-card pointer-events-auto sticky top-20 rounded-lg border p-5 shadow-lg"
+              :aria-label="t.cartBuilder"
+            >
+              <div class="flex items-center justify-between">
+                <h2 class="flex items-center gap-2 text-[15px] font-semibold">
+                  <ShoppingBag class="size-4" />
+                  {{ t.cartBuilder }}
+                </h2>
+                <span
+                  class="t-num bg-encre/8 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-semibold"
+                >
+                  {{ derived.itemCount.value }}
+                </span>
+              </div>
+
+              <p
+                v-if="derived.cartLines.value.length === 0"
+                class="text-muted-foreground mt-3 text-sm"
+              >
+                {{ t.emptyCart }}
+              </p>
+              <ul
+                v-else
+                class="mt-3 max-h-[30vh] space-y-2 overflow-y-auto text-sm"
+              >
+                <li
+                  v-for="line in derived.cartLines.value"
+                  :key="line.id"
+                  class="flex items-baseline justify-between gap-3"
+                >
+                  <span class="min-w-0 truncate">
+                    <span class="t-num text-muted-foreground"
+                      >{{ line.quantity }} ×</span
+                    >
+                    {{ line.product.name[locale] }}
+                  </span>
+                  <span class="t-num shrink-0">{{
+                    formatCurrency.format(line.lineTotal)
+                  }}</span>
+                </li>
+              </ul>
+
+              <dl class="mt-4 space-y-1.5 border-t pt-4 text-sm">
+                <div class="flex justify-between gap-3">
+                  <dt class="text-muted-foreground">{{ t.subtotal }}</dt>
+                  <dd class="t-num font-semibold">
+                    {{ formatCurrency.format(derived.subtotal.value) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-muted-foreground">
+                    {{ t.creditRemainingShort }}
+                  </dt>
+                  <dd class="t-num font-semibold">
+                    {{
+                      isCreditKnown
+                        ? formatCurrency.format(derived.creditRemaining.value)
+                        : t.toBeDetermined
+                    }}
+                  </dd>
+                </div>
+                <div
+                  v-if="isCreditKnown && derived.walletToPay.value > 0"
+                  class="flex justify-between gap-3"
+                >
+                  <dt class="text-muted-foreground">{{ t.walletToPay }}</dt>
+                  <dd class="t-num font-semibold">
+                    {{ formatCurrency.format(derived.walletToPay.value) }}
+                  </dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                class="bg-encre text-grege focus-visible:ring-ring/50 mt-4 flex h-11 w-full cursor-pointer items-center justify-center rounded-md text-sm font-semibold transition-colors outline-none hover:bg-[#3a312a] focus-visible:ring-[3px]"
+                @click="actions.setCartOpen(true)"
+              >
+                {{ t.openCart }}
+              </button>
+
+              <dl
+                class="text-muted-foreground mt-4 space-y-1.5 border-t pt-4 text-sm"
+              >
+                <div class="flex justify-between gap-3">
+                  <dt>{{ t.welcomeDeadlineLabel }}</dt>
+                  <dd
+                    class="t-num text-foreground font-semibold whitespace-nowrap"
+                  >
+                    {{ welcomeDeadline ?? t.toBeDetermined }}
+                  </dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+
+          <!-- L'accueil: un titre et une ligne de faits. Rien d'autre. -->
+          <section class="pr-(--cart-panel-clearance) pb-8 sm:pb-10">
+            <h1>
+              <img
+                :src="propulshopWordmarkUrl"
+                alt="Le Propulshop"
+                class="h-10 w-auto sm:h-12"
+                width="374"
+                height="50"
+              />
+            </h1>
+
+            <p
+              v-if="t.welcomeDescription"
+              class="text-muted-foreground mt-3 text-[15px]"
+            >
+              {{ t.welcomeDescription }}
+            </p>
+
+            <dl
+              class="text-muted-foreground mt-3 flex flex-wrap gap-x-8 gap-y-1 text-[15px]"
+              :class="{ 'lg:hidden': !isReadOnlyForCurrentUser }"
+            >
+              <div class="flex gap-2">
+                <dt>{{ t.welcomeCreditLabel }}</dt>
+                <dd class="t-num text-foreground font-semibold">
+                  {{ welcomeCredit ?? t.toBeDetermined }}
+                </dd>
+              </div>
+              <div class="flex gap-2">
+                <dt>{{ t.welcomeDeadlineLabel }}</dt>
+                <dd class="t-num text-foreground font-semibold">
+                  {{ welcomeDeadline ?? t.toBeDetermined }}
+                </dd>
+              </div>
+            </dl>
+          </section>
 
           <p
-            v-if="t.welcomeDescription"
-            class="text-muted-foreground mt-3 text-[15px]"
+            v-if="shopProducts.length === 0 && catalogStatusMessage"
+            class="text-muted-foreground mb-4 text-sm"
+            role="status"
           >
-            {{ t.welcomeDescription }}
+            {{ catalogStatusMessage }}
           </p>
 
-          <dl
-            class="text-muted-foreground mt-3 flex flex-wrap gap-x-8 gap-y-1 text-[15px]"
-          >
-            <div class="flex gap-2">
-              <dt>{{ t.welcomeCreditLabel }}</dt>
-              <dd class="t-num text-foreground font-semibold">
-                {{ welcomeCredit ?? t.toBeDetermined }}
-              </dd>
-            </div>
-            <div class="flex gap-2">
-              <dt>{{ t.welcomeDeadlineLabel }}</dt>
-              <dd class="t-num text-foreground font-semibold">
-                {{ welcomeDeadline ?? t.toBeDetermined }}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <p
-          v-if="shopProducts.length === 0 && catalogStatusMessage"
-          class="text-muted-foreground mb-4 text-sm"
-          role="status"
-        >
-          {{ catalogStatusMessage }}
-        </p>
-
-        <CatalogSection
-          :t="t"
-          :locale="locale"
-          :products="shopProducts"
-          :cart-lines="derived.cartLines.value"
-          :format-currency="formatCurrency"
-          :view-only="isReadOnlyForCurrentUser"
-          :active-category="state.activeCategory.value"
-          @select-category="actions.setActiveCategory"
-          @open-product="onOpenProduct"
-          @quick-add="onQuickAdd"
-        />
+          <CatalogSection
+            :t="t"
+            :locale="locale"
+            :products="shopProducts"
+            :cart-lines="derived.cartLines.value"
+            :format-currency="formatCurrency"
+            :view-only="isReadOnlyForCurrentUser"
+            :active-category="state.activeCategory.value"
+            @select-category="actions.setActiveCategory"
+            @open-product="onOpenProduct"
+            @quick-add="onQuickAdd"
+          />
+        </div>
       </div>
       <OrderConfirmationPage
         v-else-if="currentView === 'confirmation'"
@@ -303,10 +411,8 @@
   <Toaster position="bottom-right" />
 
   <!--
-    Panier flottant, en haut à droite sous l'en-tête collant. Sur grand
-    écran: un résumé complet (lignes, sous-total, crédit) qui passe par-dessus
-    la grille; le haut de page lui laisse la place. Ailleurs: une pastille
-    compacte.
+    Sur petit écran, le panier est une pastille flottante en haut à droite.
+    Sur grand écran, c'est le résumé placé à côté du catalogue.
   -->
   <template
     v-if="
@@ -334,85 +440,6 @@
         formatCurrency.format(derived.subtotal.value)
       }}</span>
     </button>
-
-    <aside
-      class="bg-card fixed top-20 right-4 z-30 hidden w-72 rounded-lg border p-5 shadow-lg lg:block"
-      :aria-label="t.cartBuilder"
-    >
-      <div class="flex items-center justify-between">
-        <h2 class="flex items-center gap-2 text-[15px] font-semibold">
-          <ShoppingBag class="size-4" />
-          {{ t.cartBuilder }}
-        </h2>
-        <span
-          class="t-num bg-encre/8 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-semibold"
-        >
-          {{ derived.itemCount.value }}
-        </span>
-      </div>
-
-      <p
-        v-if="derived.cartLines.value.length === 0"
-        class="text-muted-foreground mt-3 text-sm"
-      >
-        {{ t.emptyCart }}
-      </p>
-      <ul v-else class="mt-3 max-h-[30vh] space-y-2 overflow-y-auto text-sm">
-        <li
-          v-for="line in derived.cartLines.value"
-          :key="line.id"
-          class="flex items-baseline justify-between gap-3"
-        >
-          <span class="min-w-0 truncate">
-            <span class="t-num text-muted-foreground"
-              >{{ line.quantity }} ×</span
-            >
-            {{ line.product.name[locale] }}
-          </span>
-          <span class="t-num shrink-0">{{
-            formatCurrency.format(line.lineTotal)
-          }}</span>
-        </li>
-      </ul>
-
-      <dl class="mt-4 space-y-1.5 border-t pt-4 text-sm">
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted-foreground">{{ t.subtotal }}</dt>
-          <dd class="t-num font-semibold">
-            {{ formatCurrency.format(derived.subtotal.value) }}
-          </dd>
-        </div>
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted-foreground">
-            {{ t.creditRemainingShort }}
-          </dt>
-          <dd class="t-num font-semibold">
-            {{
-              isCreditKnown
-                ? formatCurrency.format(derived.creditRemaining.value)
-                : t.toBeDetermined
-            }}
-          </dd>
-        </div>
-        <div
-          v-if="isCreditKnown && derived.walletToPay.value > 0"
-          class="flex justify-between gap-3"
-        >
-          <dt class="text-muted-foreground">{{ t.walletToPay }}</dt>
-          <dd class="t-num font-semibold">
-            {{ formatCurrency.format(derived.walletToPay.value) }}
-          </dd>
-        </div>
-      </dl>
-
-      <button
-        type="button"
-        class="bg-encre text-grege focus-visible:ring-ring/50 mt-4 flex h-11 w-full cursor-pointer items-center justify-center rounded-md text-sm font-semibold transition-colors outline-none hover:bg-[#3a312a] focus-visible:ring-[3px]"
-        @click="actions.setCartOpen(true)"
-      >
-        {{ t.openCart }}
-      </button>
-    </aside>
   </template>
 
   <CartDrawer
@@ -445,8 +472,8 @@ import AdminDashboard from "@/components/merch/AdminDashboard.vue";
 import AdminOrderDetailsPage from "@/components/merch/AdminOrderDetailsPage.vue";
 import AdminEditionsPage from "@/components/merch/admin-editions/AdminEditionsPage.vue";
 import AdminProductsPage from "@/components/merch/admin-products/AdminProductsPage.vue";
+import propulshopWordmarkUrl from "@/assets/brand/propulshop-wordmark.svg";
 import CartDrawer from "@/components/merch/CartDrawer.vue";
-import ShopLogo from "@/components/merch/ShopLogo.vue";
 import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
 import OrderHistoryPage from "@/components/merch/OrderHistoryPage.vue";
