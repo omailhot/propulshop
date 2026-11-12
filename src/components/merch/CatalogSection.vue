@@ -1,8 +1,11 @@
 <template>
-  <section class="animate-fade-up-delay" aria-labelledby="catalog-heading">
+  <section
+    class="animate-fade-up-delay @container mr-(--cart-panel-clearance)"
+    aria-labelledby="catalog-heading"
+  >
     <!-- Titre, puis les catégories en simples onglets texte. -->
     <div
-      class="mr-(--cart-panel-clearance) flex flex-col gap-5 border-b sm:flex-row sm:items-end sm:justify-between"
+      class="flex flex-col gap-5 border-b sm:flex-row sm:items-end sm:justify-between"
     >
       <h2 id="catalog-heading" class="t-h2 pb-0 sm:pb-4">
         {{ t.catalogTitle }}
@@ -36,7 +39,7 @@
       texte dessous. Toute la carte ouvre la fiche.
     -->
     <div
-      class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:mt-10 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-3"
+      class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:mt-10 sm:gap-x-8 sm:gap-y-12 @3xl:grid-cols-3"
     >
       <article
         v-for="product in visibleProducts"

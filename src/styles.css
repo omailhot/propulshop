@@ -348,6 +348,10 @@
     --cart-panel-offset: 1rem;
     --cart-panel-gap: 2rem;
     --content-edge-offset: max(2rem, calc((100vw - 72rem) / 2 + 2rem));
+    --cart-panel-inset: max(
+      calc(var(--cart-panel-offset) - var(--content-edge-offset)),
+      calc(-1 * (var(--cart-panel-width) + var(--cart-panel-gap)))
+    );
 
     @media (width >= 64rem) {
       --cart-panel-clearance: max(

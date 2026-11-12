@@ -194,7 +194,7 @@
         <div class="relative">
           <div
             v-if="!isReadOnlyForCurrentUser && !state.cartOpen.value"
-            class="pointer-events-none absolute inset-y-0 right-[calc(1rem-var(--content-edge-offset))] z-30 hidden w-72 lg:block"
+            class="pointer-events-none absolute inset-y-0 right-(--cart-panel-inset) z-30 hidden w-72 lg:block"
           >
             <aside
               class="bg-card pointer-events-auto sticky top-20 rounded-lg border p-5 shadow-lg"
