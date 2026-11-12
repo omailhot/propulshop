@@ -9,7 +9,7 @@
     >
       <a
         :href="localizedHome"
-        class="focus-visible:ring-ring/40 flex min-w-0 items-center gap-4 rounded-md outline-none focus-visible:ring-[3px]"
+        class="focus-visible:ring-ring/40 flex items-center rounded-md outline-none focus-visible:ring-[3px]"
         @click.prevent="$emit('open-home')"
       >
         <!--
@@ -30,9 +30,6 @@
           width="29"
           height="32"
         />
-        <span class="text-muted-foreground truncate text-sm">
-          {{ title ?? m.header_name() }}
-        </span>
       </a>
 
       <nav class="-mr-3 flex shrink-0 items-center gap-1 text-sm">
@@ -102,12 +99,9 @@ import { computed } from "vue";
 
 import iconUrl from "@/assets/brand/propulso-icon.svg";
 import wordmarkUrl from "@/assets/brand/propulso-wordmark.svg";
-import { m } from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 
 const props = defineProps<{
-  title?: string;
-  subtitle?: string;
   sessionEmail?: string | null;
   isAuthenticated?: boolean;
   isAdmin?: boolean;

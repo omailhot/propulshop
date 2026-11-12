@@ -1,7 +1,5 @@
 <template>
   <Header
-    :title="t.appTitle"
-    :subtitle="t.appSubtitle"
     :session-email="sessionUser?.email ?? null"
     :is-authenticated="Boolean(sessionUser)"
     :is-admin="isAdmin"
@@ -14,12 +12,12 @@
     :admin-label="t.admin"
     :catalog-label="t.backToCatalogShort"
     :orders-label="t.myOrders"
-    :show-credit="currentView === 'catalog' && !isReadOnlyForCurrentUser"
+    :show-credit="
+      currentView === 'catalog' && !isReadOnlyForCurrentUser && isCreditKnown
+    "
     :credit-label="t.creditRemainingShort"
     :credit-remaining-label="
-      isCreditKnown
-        ? formatCurrency.format(derived.creditRemaining.value)
-        : t.toBeDetermined
+      formatCurrency.format(derived.creditRemaining.value)
     "
     @connect-google="onConnectGoogle"
     @sign-out="onSignOut"
@@ -196,7 +194,17 @@
 
         <!-- L'accueil: un titre et une ligne de faits. Rien d'autre. -->
         <section class="pr-(--cart-panel-clearance) pb-8 sm:pb-10">
-          <h1 class="t-h1">{{ t.welcomeTitle }}</h1>
+          <h1>
+            <ShopLogo />
+          </h1>
+
+          <p
+            v-if="t.welcomeDescription"
+            class="text-muted-foreground mt-3 text-[15px]"
+          >
+            {{ t.welcomeDescription }}
+          </p>
+
           <dl
             class="text-muted-foreground mt-3 flex flex-wrap gap-x-8 gap-y-1 text-[15px]"
           >
@@ -272,7 +280,7 @@
         v-else
         :t="t"
         :locale="locale"
-        :orders="orderHistory"
+        :editions="orderHistory"
         :format-currency="formatCurrency"
         @back="onBackToCatalog"
       />
@@ -438,6 +446,7 @@ import AdminOrderDetailsPage from "@/components/merch/AdminOrderDetailsPage.vue"
 import AdminEditionsPage from "@/components/merch/admin-editions/AdminEditionsPage.vue";
 import AdminProductsPage from "@/components/merch/admin-products/AdminProductsPage.vue";
 import CartDrawer from "@/components/merch/CartDrawer.vue";
+import ShopLogo from "@/components/merch/ShopLogo.vue";
 import CatalogSection from "@/components/merch/CatalogSection.vue";
 import OrderConfirmationPage from "@/components/merch/OrderConfirmationPage.vue";
 import OrderHistoryPage from "@/components/merch/OrderHistoryPage.vue";
@@ -449,6 +458,7 @@ import {
   formatCreditAmount,
   formatDeadlineDate,
   getEditionName,
+  getNoOrderLabel,
   isDeadlinePassed,
 } from "@/config/edition";
 import { createMerchCopy } from "@/config/merch-copy";
@@ -605,24 +615,34 @@ const orderPlacedLabel = computed(() =>
     : "",
 );
 const orderHistory = computed(() =>
-  userOrders.value
-    .filter((order) => order.placedAt)
-    .map((order) => {
-      const edition = getEdition(order.edition);
+  [...editions.value]
+    .sort((first, second) => first.number - second.number)
+    .map((edition) => {
+      const order = userOrders.value.find(
+        (candidate) =>
+          candidate.edition === edition.number && candidate.placedAt,
+      );
       const billing = computeBillableByPerson(
-        order.subtotal,
+        order?.subtotal ?? 0,
         edition.creditPerEmployee ?? 0,
       );
       return {
-        id: order.id,
-        editionName: getEditionName(edition.number, locale.value),
+        number: edition.number,
+        name: getEditionName(edition.number, locale.value),
+        noOrderLabel: getNoOrderLabel(edition.number, locale.value),
         isCurrentEdition: edition.number === currentEdition.value.number,
         isCreditKnown: edition.creditPerEmployee !== null,
-        placedLabel: `${t.value.orderPlacedOn} ${formatPlacedDate(order.placedAt ?? "")}`,
-        lines: order.items.map((item) => toOrderLineView(item, products.value)),
-        subtotal: billing.total,
-        creditUsed: billing.total - billing.billable,
-        walletToPay: billing.billable,
+        order: order
+          ? {
+              placedLabel: `${t.value.orderPlacedOn} ${formatPlacedDate(order.placedAt ?? "")}`,
+              lines: order.items.map((item) =>
+                toOrderLineView(item, products.value),
+              ),
+              subtotal: billing.total,
+              creditUsed: billing.total - billing.billable,
+              walletToPay: billing.billable,
+            }
+          : null,
       };
     }),
 );

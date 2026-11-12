@@ -53,6 +53,13 @@ export const getEditionName = (number: number, locale: StoreLocale) => {
 	return locale === "fr" ? `${capitalized} édition` : `${capitalized} edition`;
 };
 
+export const getNoOrderLabel = (number: number, locale: StoreLocale) => {
+	const ordinal = getEditionOrdinal(number, locale);
+	return locale === "fr"
+		? `Aucune commande n'est placée pour la ${ordinal} édition.`
+		: `No order has been placed for the ${ordinal} edition.`;
+};
+
 const TIME_ZONE = "America/Toronto";
 
 const intlLocale = (locale: StoreLocale) =>

@@ -10,7 +10,7 @@
       <div
         role="radiogroup"
         :aria-label="t.categoryFilterLabel"
-        class="-mx-4 -mb-px flex gap-6 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        class="-mb-px flex flex-wrap gap-x-6"
       >
         <button
           v-for="category in availableCategories"
@@ -41,7 +41,7 @@
       <article
         v-for="product in visibleProducts"
         :key="product.id"
-        class="group flex cursor-pointer flex-col rounded-lg outline-none"
+        class="group row-span-3 grid cursor-pointer grid-rows-subgrid gap-y-0 rounded-lg outline-none"
         tabindex="0"
         @click="openProduct(product)"
         @keydown.enter.self.prevent="openProduct(product)"
@@ -77,7 +77,7 @@
               <Tooltip>
                 <TooltipTrigger as-child>
                   <span
-                    class="text-muted-foreground shrink-0 cursor-default text-sm"
+                    class="text-muted-foreground mt-auto shrink-0 cursor-default text-sm sm:mt-0"
                     tabindex="0"
                     @click.stop
                   >
@@ -96,7 +96,7 @@
             <button
               v-else
               type="button"
-              class="bg-encre/6 text-foreground hover:bg-encre/12 focus-visible:ring-ring/40 inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px]"
+              class="bg-encre/6 text-foreground hover:bg-encre/12 focus-visible:ring-ring/40 mt-auto inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px] sm:mt-0"
               @click.stop="quickAdd(product)"
             >
               {{ needsVariantChoice(product) ? t.selectVariant : t.addShort }}
@@ -105,7 +105,10 @@
         </div>
 
         <!-- Un produit, plusieurs couleurs: une pastille par couleur. -->
-        <div v-if="getColorGroup(product)" class="mt-3 flex items-center gap-2.5">
+        <div
+          v-if="getColorGroup(product)"
+          class="mt-3 flex items-center gap-2.5 self-start"
+        >
           <ColorSwatches
             size="sm"
             :label="t.colorLabel"

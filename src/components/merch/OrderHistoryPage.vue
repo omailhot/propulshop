@@ -11,24 +11,44 @@
       </Button>
     </div>
 
-    <p v-if="orders.length === 0" class="text-muted-foreground mt-8 text-sm">
-      {{ t.orderHistoryEmpty }}
-    </p>
+    <SegmentedControl
+      v-if="selectedEdition"
+      class="mt-6"
+      :label="t.myOrders"
+      :options="editionOptions"
+      :model-value="selectedEdition.number"
+      @update:model-value="selectedNumber = $event"
+    />
+
+    <div
+      v-if="selectedEdition && !order"
+      class="bg-card mt-6 rounded-lg px-5 py-12 text-center"
+    >
+      <ShoppingBag
+        class="text-muted-foreground mx-auto size-8"
+        aria-hidden="true"
+      />
+
+      <p class="mt-4 font-semibold">{{ t.emptyCart }}</p>
+
+      <p class="text-muted-foreground mt-1 text-sm">
+        {{ selectedEdition.noOrderLabel }}
+      </p>
+    </div>
 
     <article
-      v-for="order in orders"
-      :key="order.id"
-      class="bg-card mt-8 rounded-lg p-5 sm:p-6"
+      v-if="selectedEdition && order"
+      class="bg-card mt-6 rounded-lg p-5 sm:p-6"
     >
       <header class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="t-h3">{{ order.editionName }}</h2>
+          <h2 class="t-h3">{{ selectedEdition.name }}</h2>
           <p class="text-muted-foreground mt-1 text-sm">
             {{ order.placedLabel }}
           </p>
         </div>
 
-        <Badge v-if="order.isCurrentEdition" variant="success">
+        <Badge v-if="selectedEdition.isCurrentEdition" variant="success">
           {{ t.currentEdition }}
         </Badge>
       </header>
@@ -79,7 +99,7 @@
           <dt class="text-muted-foreground">{{ t.creditUsed }}</dt>
           <dd class="t-num">
             {{
-              order.isCreditKnown
+              selectedEdition.isCreditKnown
                 ? formatCurrency.format(order.creditUsed)
                 : t.toBeDetermined
             }}
@@ -90,7 +110,7 @@
           <dt class="font-semibold">{{ t.walletToPay }}</dt>
           <dd class="t-num font-semibold">
             {{
-              order.isCreditKnown
+              selectedEdition.isCreditKnown
                 ? formatCurrency.format(order.walletToPay)
                 : t.toBeDetermined
             }}
@@ -102,29 +122,34 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from "lucide-vue-next";
+import { ArrowLeft, ShoppingBag } from "lucide-vue-next";
+import { computed, ref } from "vue";
 
 import VariantChips from "@/components/merch/VariantChips.vue";
 import Badge from "@/components/ui/Badge.vue";
 import Button from "@/components/ui/Button.vue";
+import SegmentedControl from "@/components/ui/SegmentedControl.vue";
 import type { MerchCopy } from "@/config/merch-copy";
 import { getPrimaryImage } from "@/lib/product-images";
 import { getVariantChips } from "@/lib/variant-labels";
 import type { CartLineView, StoreLocale } from "@/types/merch";
 
-defineProps<{
+const props = defineProps<{
   t: MerchCopy;
   locale: StoreLocale;
-  orders: Array<{
-    id: string;
-    editionName: string;
+  editions: Array<{
+    number: number;
+    name: string;
+    noOrderLabel: string;
     isCurrentEdition: boolean;
     isCreditKnown: boolean;
-    placedLabel: string;
-    lines: CartLineView[];
-    subtotal: number;
-    creditUsed: number;
-    walletToPay: number;
+    order: {
+      placedLabel: string;
+      lines: CartLineView[];
+      subtotal: number;
+      creditUsed: number;
+      walletToPay: number;
+    } | null;
   }>;
   formatCurrency: Intl.NumberFormat;
 }>();
@@ -132,4 +157,20 @@ defineProps<{
 defineEmits<{
   back: [];
 }>();
+
+const selectedNumber = ref<number | null>(null);
+
+const selectedEdition = computed(
+  () =>
+    props.editions.find((edition) => edition.number === selectedNumber.value) ??
+    props.editions.find((edition) => edition.isCurrentEdition) ??
+    null,
+);
+const order = computed(() => selectedEdition.value?.order ?? null);
+const editionOptions = computed(() =>
+  props.editions.map((edition) => ({
+    id: edition.number,
+    label: edition.name,
+  })),
+);
 </script>

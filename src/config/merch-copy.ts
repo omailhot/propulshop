@@ -1,5 +1,6 @@
 import {
 	type Edition,
+	PENDING_EDITION,
 	formatCreditAmount,
 	formatDeadlineDate,
 	getEditionName,
@@ -10,8 +11,6 @@ import type { Category, StoreLocale } from "@/types/merch";
 type LocalizedCategoryLabels = Record<"all" | Category, string>;
 
 export type MerchCopy = {
-	appTitle: string;
-	appSubtitle: string;
 	landingBadge: string;
 	landingTitle: string;
 	landingDescription: string;
@@ -106,7 +105,7 @@ export type MerchCopy = {
 	giftCardQuantityLimit: string;
 	giftCardLimitReached: string;
 	welcomeEyebrow: string;
-	welcomeTitle: string;
+	welcomeDescription: string;
 	welcomeBody: string;
 	welcomeCreditLabel: string;
 	welcomeCreditNote: string;
@@ -135,7 +134,6 @@ export type MerchCopy = {
 	cancelOrder: string;
 	cancelOrderHint: string;
 	myOrders: string;
-	orderHistoryEmpty: string;
 	currentEdition: string;
 	catalogLoading: string;
 	catalogUnavailable: string;
@@ -164,6 +162,7 @@ export const CATEGORY_LABELS: Record<StoreLocale, LocalizedCategoryLabels> = {
 export const createMerchCopy = (
 	edition: Edition,
 ): Record<StoreLocale, MerchCopy> => {
+	const isPending = edition.number === PENDING_EDITION.number;
 	const credit = {
 		fr: formatCreditAmount(edition.creditPerEmployee, "fr"),
 		en: formatCreditAmount(edition.creditPerEmployee, "en"),
@@ -196,8 +195,6 @@ export const createMerchCopy = (
 
 	return {
 		en: {
-			appTitle: "Propulshop",
-			appSubtitle: getEditionName(edition.number, "en"),
 			landingBadge: "Modern Team Store",
 			landingTitle: "Premium merch experience for every employee",
 			landingDescription:
@@ -324,7 +321,9 @@ export const createMerchCopy = (
 			giftCardLimitReached:
 				"This gift card is already in your cart. Maximum quantity is 1.",
 			welcomeEyebrow: `${getEditionName(edition.number, "en")} · Social committee`,
-			welcomeTitle: "The Propulshop",
+			welcomeDescription: isPending
+				? ""
+				: `${getEditionName(edition.number, "en")}, new branding`,
 			welcomeBody: `The social committee is proud to present the catalog for the ${getEditionOrdinal(edition.number, "en")} edition of the Propulshop. Listed prices include taxes.`,
 			welcomeCreditLabel: "Credit per employee",
 			welcomeCreditNote: "Valid for this edition only",
@@ -357,15 +356,12 @@ export const createMerchCopy = (
 			cancelOrder: "Cancel my order",
 			cancelOrderHint: "If you confirm, your placed order will be cancelled.",
 			myOrders: "My orders",
-			orderHistoryEmpty: "No placed order yet.",
 			currentEdition: "Current edition",
 			catalogLoading: "Loading the catalog...",
 			catalogUnavailable: "The catalog could not be loaded. Try again later.",
 			catalogSignInRequired: "Sign in to see the catalog.",
 		},
 		fr: {
-			appTitle: "Propulshop",
-			appSubtitle: getEditionName(edition.number, "fr"),
 			landingBadge: "Boutique équipe",
 			landingTitle: "Expérience merch premium pour chaque employé",
 			landingDescription:
@@ -500,7 +496,9 @@ export const createMerchCopy = (
 			giftCardLimitReached:
 				"Cette carte-cadeau est déjà dans votre panier. La quantité maximale est 1.",
 			welcomeEyebrow: `${getEditionName(edition.number, "fr")} · Comité social`,
-			welcomeTitle: "Le Propulshop",
+			welcomeDescription: isPending
+				? ""
+				: `${getEditionName(edition.number, "fr")}, nouveau branding`,
 			welcomeBody: `Le comité social est fier de vous présenter le catalogue de la ${getEditionOrdinal(edition.number, "fr")} édition du Propulshop. Les prix affichés comprennent les taxes.`,
 			welcomeCreditLabel: "Crédit par employé",
 			welcomeCreditNote: "Utilisable pour cette édition seulement",
@@ -533,7 +531,6 @@ export const createMerchCopy = (
 			cancelOrder: "Annuler ma commande",
 			cancelOrderHint: "Si vous confirmez, votre commande placée sera annulée.",
 			myOrders: "Mes commandes",
-			orderHistoryEmpty: "Aucune commande placée pour le moment.",
 			currentEdition: "Édition en cours",
 			catalogLoading: "Chargement du catalogue...",
 			catalogUnavailable:

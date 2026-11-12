@@ -6,6 +6,7 @@ import {
 	formatDeadlineDate,
 	getEditionName,
 	getEditionOrdinal,
+	getNoOrderLabel,
 	isDeadlinePassed,
 	PENDING_EDITION,
 	toDeadlineDateInput,
@@ -57,6 +58,9 @@ describe("edition names", () => {
 	it("writes the ordinal in both languages", () => {
 		expect(getEditionName(2, "fr")).toBe("Deuxième édition");
 		expect(getEditionName(2, "en")).toBe("Second edition");
+		expect(getNoOrderLabel(2, "fr")).toBe(
+			"Aucune commande n'est placée pour la deuxième édition.",
+		);
 		expect(getEditionOrdinal(3, "fr")).toBe("troisième");
 	});
 
@@ -115,7 +119,7 @@ describe("the texts of an edition", () => {
 		const copy = createMerchCopy(setEdition).fr;
 		expect(copy.policy.replace(/\s/g, " ")).toContain("200 $");
 		expect(copy.placedPageBody).toContain("15 décembre 2026");
-		expect(copy.appSubtitle).toBe("Deuxième édition");
+		expect(copy.welcomeDescription).toBe("Deuxième édition, nouveau branding");
 	});
 
 	it("leaves no raw null in any text", () => {
