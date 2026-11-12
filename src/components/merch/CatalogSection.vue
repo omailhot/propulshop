@@ -80,7 +80,7 @@
               <Tooltip>
                 <TooltipTrigger as-child>
                   <span
-                    class="text-muted-foreground mt-auto shrink-0 cursor-default text-sm sm:mt-0"
+                    class="text-muted-foreground mt-auto shrink-0 cursor-default self-start text-sm sm:mt-0"
                     tabindex="0"
                     @click.stop
                   >
@@ -99,7 +99,7 @@
             <button
               v-else
               type="button"
-              class="bg-encre/6 text-foreground hover:bg-encre/12 focus-visible:ring-ring/40 mt-auto inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px] sm:mt-0"
+              class="bg-encre/6 text-foreground hover:bg-encre/12 focus-visible:ring-ring/40 mt-auto inline-flex h-9 shrink-0 cursor-pointer items-center self-start rounded-full px-3.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-[3px] sm:mt-0"
               @click.stop="quickAdd(product)"
             >
               {{ needsVariantChoice(product) ? t.selectVariant : t.addShort }}

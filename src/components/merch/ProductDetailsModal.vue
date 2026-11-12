@@ -24,29 +24,26 @@
           class-name="h-64 rounded-lg sm:h-[22rem] md:h-[30rem]"
         />
 
-        <div
-          class="flex min-h-0 flex-col md:max-h-[70vh]"
-        >
-          <div
-            class="min-h-0 flex-1 space-y-6 px-1 pb-5 md:overflow-y-auto md:px-4"
-          >
-            <div>
-              <p class="text-muted-foreground text-sm">
-                {{ t.categoryLabels[product.category] }}
-              </p>
-              <h2 class="t-h2 mt-1">
-                {{ product.name[locale] }}
-              </h2>
-              <p class="t-num text-muted-foreground mt-2 text-lg">
-                {{ formatCurrency.format(unitPrice) }}
-              </p>
-              <div
-                v-if="descriptionHtml"
-                class="prose-produit text-muted-foreground mt-3 text-sm"
-                v-html="descriptionHtml"
-              />
-            </div>
+        <div class="flex min-h-0 flex-col md:max-h-[calc(86dvh-4.75rem)]">
+          <div class="shrink-0 px-1 md:px-4">
+            <p class="text-muted-foreground text-sm">
+              {{ t.categoryLabels[product.category] }}
+            </p>
+            <h2 class="t-h2 mt-1">
+              {{ product.name[locale] }}
+            </h2>
+            <p class="t-num text-muted-foreground mt-2 text-lg">
+              {{ formatCurrency.format(unitPrice) }}
+            </p>
+          </div>
 
+          <div
+            v-if="descriptionHtml"
+            class="prose-produit text-muted-foreground mt-3 max-h-40 overflow-y-auto px-1 text-sm md:max-h-none md:min-h-24 md:px-4"
+            v-html="descriptionHtml"
+          />
+
+          <div class="shrink-0 space-y-6 px-1 pt-6 pb-5 md:px-4">
             <div v-for="group in variantGroups" :key="group.id">
               <p class="mb-2 text-sm">
                 <span class="font-semibold">{{ group.label[locale] }}</span>
@@ -112,7 +109,7 @@
           </div>
 
           <div
-            class="bg-background sticky bottom-0 border-t px-1 pt-4 md:static md:px-4"
+            class="bg-background sticky bottom-0 shrink-0 border-t px-1 pt-4 md:static md:mt-auto md:px-4"
             style="
               padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
             "
